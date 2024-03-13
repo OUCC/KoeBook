@@ -102,6 +102,7 @@ public partial class App : Application
                 services.AddSingleton<IScraperSelectorService, ScraperSelectorService>()
                     .AddSingleton<IScrapingService, ScrapingAozoraService>()
                     .AddSingleton<IScrapingService, ScrapingNaroService>();
+                services.AddSingleton<IEpubCreateService, EpubCreateService>();
 
                 // Views and ViewModels
                 services.AddTransient<SettingsViewModel>();

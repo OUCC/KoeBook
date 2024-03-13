@@ -1,7 +1,10 @@
-﻿namespace KoeBook.Epub.Models;
+﻿using KoeBook.Core.Models;
+
+namespace KoeBook.Epub.Models;
 
 public sealed class Paragraph : Element
 {
-    public Audio? Audio { get; set; }
+    public ScriptLine? ScriptLine { get; set; }
+    public Audio? Audio => ScriptLine?.Audio;
     public string? Text { get; set; }
 }

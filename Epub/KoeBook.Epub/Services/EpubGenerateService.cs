@@ -1,14 +1,17 @@
-﻿using KoeBook.Core.Contracts.Services;
+﻿using KoeBook.Core;
+using KoeBook.Core.Contracts.Services;
 using KoeBook.Core.Models;
 using KoeBook.Epub;
+using KoeBook.Epub.Contracts.Services;
 using KoeBook.Epub.Models;
 
-namespace KoeBook.Core.Services;
+namespace KoeBook.Epub.Services;
 
-public class EpubGenerateService(ISoundGenerationService soundGenerationService, IEpubDocumentStoreService epubDocumentStoreService) : IEpubGenerateService
+public class EpubGenerateService(ISoundGenerationService soundGenerationService, IEpubDocumentStoreService epubDocumentStoreService, IEpubCreateService epubCreateService) : IEpubGenerateService
 {
     private ISoundGenerationService _soundGenerationService = soundGenerationService;
     private IEpubDocumentStoreService _documentStoreService = epubDocumentStoreService;
+    private IEpubCreateService _createService = epubCreateService;
 
     public async ValueTask<string> GenerateEpubAsync(BookScripts bookScripts, string tempDirectory, CancellationToken cancellationToken)
     {
@@ -19,10 +22,10 @@ public class EpubGenerateService(ISoundGenerationService soundGenerationService,
 
         foreach (var scriptLine in bookScripts.ScriptLines)
         {
-            scriptLine.Paragraph.Audio = new Audio(await _soundGenerationService.GenerateLineSoundAsync(scriptLine, bookScripts.Options, cancellationToken).ConfigureAwait(false));
+            scriptLine.Audio = new Audio(await _soundGenerationService.GenerateLineSoundAsync(scriptLine, bookScripts.Options, cancellationToken).ConfigureAwait(false));
         }
 
-        if (await document.TryCreateEpubAsync(tempDirectory, bookScripts.BookProperties.Id.ToString(), cancellationToken).ConfigureAwait(false))
+        if (await _createService.TryCreateEpubAsync(document, tempDirectory, cancellationToken).ConfigureAwait(false))
         {
             _documentStoreService.Unregister(bookScripts.BookProperties.Id);
             return Path.Combine(tempDirectory, $"{bookScripts.BookProperties.Id}.epub");

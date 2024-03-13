@@ -1,6 +1,6 @@
 ﻿using KoeBook.Epub.Models;
 
-namespace KoeBook.Core.Contracts.Services;
+namespace KoeBook.Epub.Contracts.Services;
 
 public interface IEpubDocumentStoreService
 {

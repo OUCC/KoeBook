@@ -25,12 +25,23 @@ namespace KoeBook.Epub.Services
             var doc = await context.OpenAsync(url, ct).ConfigureAwait(false);
 
             // title の取得
-            var bookTitle = doc.QuerySelector(".novel_title")
+            var bookTitleElement = doc.QuerySelector(".novel_title")
                 ?? throw new EpubDocumentException($"Failed to get title properly.\nUrl may be not collect");
+            var bookTitle = bookTitleElement.InnerHtml;
 
             // auther の取得
-            var bookAuther = doc.QuerySelector(".novel_writername a")
+            var bookAutherElement = doc.QuerySelector(".novel_writername")
                 ?? throw new EpubDocumentException($"Failed to get auther properly.\nUrl may be not collect");
+            var bookAuther = string.Empty;
+            if (bookAutherElement.QuerySelector("a") is IHtmlAnchorElement bookAutherAnchorElement)
+            {
+                bookAuther = bookAutherAnchorElement.InnerHtml;
+            }
+            else
+            {
+                bookAuther = bookAutherElement.InnerHtml.Replace("作者：", "");
+            }
+
             bool isRensai = true;
             int allNum = 0;
 
@@ -65,14 +76,13 @@ namespace KoeBook.Epub.Services
                     throw new EpubDocumentException("faild to get data by Narou API");
             }
 
-            var document = new EpubDocument(bookTitle.InnerHtml, bookAuther.InnerHtml, coverFilePath, id);
-            if (isRensai)
+            var document = new EpubDocument(bookTitle, bookAuther, coverFilePath, id);
+            if (isRensai) // 連載の時
             {
                 List<SectionWithChapterTitle> SectionWithChapterTitleList = new List<SectionWithChapterTitle>();
                 for (int i = 1; i <= allNum; i++)
                 {
-                    Console.WriteLine(i);
-                    await Task.Delay(500, ct);
+                    await Task.Delay(1500, ct);
                     var pageUrl = Path.Combine(url, i.ToString());
                     var load = await ReadPageAsync(pageUrl, isRensai, imageDirectory, ct).ConfigureAwait(false);
                     SectionWithChapterTitleList.Add(load);
@@ -106,7 +116,7 @@ namespace KoeBook.Epub.Services
                     }
                 }
             }
-            else
+            else // 短編の時
             {
                 var load = await ReadPageAsync(url, isRensai, imageDirectory, ct).ConfigureAwait(false);
                 if (load != null)
@@ -122,19 +132,22 @@ namespace KoeBook.Epub.Services
 
         private record SectionWithChapterTitle(string? title, Section section);
 
-        private async Task<SectionWithChapterTitle> ReadPageAsync(string url, bool isRensai, string imageDirectory, CancellationToken ct)
+        private static async Task<SectionWithChapterTitle> ReadPageAsync(string url, bool isRensai, string imageDirectory, CancellationToken ct)
         {
             var config = Configuration.Default.WithDefaultLoader();
             using var context = BrowsingContext.New(config);
             var doc = await context.OpenAsync(url, ct).ConfigureAwait(false);
 
-            var chapterTitleElement = doc.QuerySelector(".chapter_title");
             string? chapterTitle = null;
-            if (chapterTitleElement != null)
+            if (!isRensai)
             {
-                if (chapterTitleElement.InnerHtml != null)
+                var chapterTitleElement = doc.QuerySelector(".chapter_title");
+                if (chapterTitleElement != null)
                 {
-                    chapterTitle = chapterTitleElement.InnerHtml;
+                    if (chapterTitleElement.InnerHtml != null)
+                    {
+                        chapterTitle = chapterTitleElement.InnerHtml;
+                    }
                 }
             }
 
@@ -148,11 +161,10 @@ namespace KoeBook.Epub.Services
                 sectionTitleElement = doc.QuerySelector(".novel_title");
             }
 
-            string sectionTitle = "";
             if (sectionTitleElement == null)
                 throw new EpubDocumentException("Can not find title of page");
 
-            sectionTitle = sectionTitleElement.InnerHtml;
+            var sectionTitle = sectionTitleElement.InnerHtml;
 
             var section = new Section(sectionTitleElement.InnerHtml);
 
@@ -224,6 +236,7 @@ namespace KoeBook.Epub.Services
                         if (tags.TagName != "RUBY")
                         {
                             isAllRuby = false;
+                            break;
                         }
                     }
 
@@ -242,7 +255,6 @@ namespace KoeBook.Epub.Services
             }
             return new SectionWithChapterTitle(chapterTitle, section);
         }
-
 
 
 

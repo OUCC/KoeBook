@@ -1,11 +1,12 @@
 ﻿using System.Text;
 using System.Text.RegularExpressions;
+using KoeBook.Core;
 using KoeBook.Core.Contracts.Services;
 using KoeBook.Core.Models;
 using KoeBook.Epub.Contracts.Services;
 using KoeBook.Epub.Models;
 
-namespace KoeBook.Core.Services;
+namespace KoeBook.Epub.Services;
 
 public partial class AnalyzerService(IScraperSelectorService scrapingService, IEpubDocumentStoreService epubDocumentStoreService, ILlmAnalyzerService llmAnalyzerService) : IAnalyzerService
 {
@@ -56,7 +57,9 @@ public partial class AnalyzerService(IScraperSelectorService scrapingService, IE
                         // ルビを置換
                         line = ReplaceBaseTextWithRuby(line, rubyDict);
 
-                        scriptLines.Add(new ScriptLine(paragraph, line, "", ""));
+                        var scriptLine = new ScriptLine(line, "", "");
+                        paragraph.ScriptLine = scriptLine;
+                        scriptLines.Add(scriptLine);
                     }
                 }
             }

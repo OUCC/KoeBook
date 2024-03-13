@@ -5,7 +5,7 @@ using KoeBook.Core.Models;
 using KoeBook.Epub;
 using KoeBook.Epub.Services;
 
-namespace KoeBook.Core.Services;
+namespace KoeBook.Epub.Services;
 
 public partial class AnalyzerService
 {

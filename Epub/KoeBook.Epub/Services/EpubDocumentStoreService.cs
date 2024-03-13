@@ -1,8 +1,8 @@
 ﻿using System.Threading.Tasks;
-using KoeBook.Core.Contracts.Services;
+using KoeBook.Epub.Contracts.Services;
 using KoeBook.Epub.Models;
 
-namespace KoeBook.Core.Services;
+namespace KoeBook.Epub.Services;
 
 public class EpubDocumentStoreService : IEpubDocumentStoreService
 {

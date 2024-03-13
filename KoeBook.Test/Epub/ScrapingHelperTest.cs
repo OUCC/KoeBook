@@ -7,6 +7,7 @@ public class ScrapingHelperTest
     public static object[][] TestCases()
     {
         (string, List<string>)[] cases = [
+            // '「''」'のみの場合のケース
             ("「", ["「"]),
             ("」", ["」"]),
             ("a", ["a"]),
@@ -29,7 +30,51 @@ public class ScrapingHelperTest
             ("abc「abc「abc」abc", ["abc", "「abc「abc」abc"]),
             ("abc「abc」abc」abc", ["abc「abc」abc」", "abc"]),
             ("abc「abc「abc", ["abc", "「abc「abc"]),
-            ("abc」abc」abc", ["abc」abc」", "abc"])
+            ("abc」abc」abc", ["abc」abc」", "abc"]),
+            // '『''』'のみの場合のケース
+            ("『", ["『"]),
+            ("』", ["』"]),
+            ("a", ["a"]),
+            ("abc『abc』abc", ["abc", "『abc』", "abc"]),
+            ("abc『abc』", ["abc", "『abc』"]),
+            ("『abc』abc", ["『abc』", "abc",]),
+            ("abc『abc』", ["abc", "『abc』"]),
+            ("『abc』", ["『abc』",]),
+            ("abc『abc", ["abc", "『abc"]),
+            ("abc『", ["abc", "『"]),
+            ("『abc", ["『abc"]),
+            ("abc』abc", ["abc』", "abc"]),
+            ("abc』", ["abc』"]),
+            ("』abc", ["』", "abc"]),
+            ("abc『abc』abc『abc』abc", ["abc", "『abc』", "abc", "『abc』", "abc"]),
+            ("『abc』abc『abc』abc", ["『abc』", "abc", "『abc』", "abc"]),
+            ("abc『abc』『abc』abc", ["abc", "『abc』", "『abc』", "abc"]),
+            ("abc『abc』abc『abc』", ["abc", "『abc』", "abc", "『abc』"]),
+            ("abc『abc『abc』abc』abc", ["abc", "『abc『abc』abc』", "abc"]),
+            ("abc『abc『abc』abc", ["abc", "『abc『abc』abc"]),
+            ("abc『abc』abc』abc", ["abc『abc』abc』", "abc"]),
+            ("abc『abc『abc", ["abc", "『abc『abc"]),
+            ("abc』abc』abc", ["abc』abc』", "abc"]),
+            // '「''」''『''』'が混在するパターン
+            ("abc「abc」abc『abc』abc", ["abc", "「abc」", "abc", "『abc』", "abc"]),
+            ("abc『abc』abc「abc」abc", ["abc", "『abc』", "abc", "「abc」", "abc"]),
+            ("「abc」abc『abc』abc", ["「abc」", "abc", "『abc』", "abc"]),
+            ("『abc』abc「abc」abc", ["『abc』", "abc", "「abc」", "abc"]),
+            ("abc「abc」『abc』abc", ["abc", "「abc」", "『abc』", "abc"]),
+            ("abc『abc』「abc」abc", ["abc", "『abc』", "「abc」", "abc"]),
+            ("abc「abc」abc『abc』", ["abc", "「abc」", "abc", "『abc』"]),
+            ("abc『abc』abc「abc」", ["abc", "『abc』", "abc", "「abc」"]),
+            ("abc「abc『abc』abc」abc", ["abc", "「abc『abc』abc」", "abc"]),
+            ("abc『abc「abc」abc』abc", ["abc", "『abc「abc」abc』", "abc"]),
+            ("abc「abc『abc』abc", ["abc", "「abc『abc』abc"]),
+            ("abc『abc「abc」abc", ["abc", "『abc「abc」abc"]),
+            ("abc「abc」abc』abc", ["abc「abc」abc』", "abc"]),
+            ("abc『abc』abc」abc", ["abc『abc』abc」", "abc"]),
+            ("abc「abc『abc", ["abc", "「abc『abc"]),
+            ("abc『abc「abc", ["abc", "『abc「abc"]),
+            ("abc」abc』abc", ["abc」abc』", "abc"]),
+            ("abc』abc」abc", ["abc』abc」", "abc"]),
+            ("abc』abc』abc", ["abc』abc』", "abc"])
         ];
         return cases.Select(c => new object[] { c.Item1, c.Item2 }).ToArray();
     }

@@ -40,9 +40,9 @@ public class AnalyzerServiceMock(IDisplayStateChangeService stateService) : IAna
         return new(bookProperties, new(characterMapping))
         {
             ScriptLines = [
-                new(new Paragraph { Text = "a" }, "読み上げテキスト1", "Hoge", "Angry"),
-                new(new Paragraph { Text = "b" }, "読み上げテキスト2", "Fuga", "Sad"),
-                new(new Paragraph { Text = "c" }, "読み上げテキスト3", "Narration", "Narration"),
+                new("読み上げテキスト1", "Hoge", "Angry"),
+                new("読み上げテキスト2", "Fuga", "Sad"),
+                new("読み上げテキスト3", "Narration", "Narration"),
             ],
         };
     }
