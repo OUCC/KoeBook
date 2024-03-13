@@ -9,7 +9,7 @@ using static KoeBook.Epub.Utility.ScrapingHelper;
 
 namespace KoeBook.Epub.Services
 {
-    public partial class ScrapingAozoraService : IScrapingService
+    public partial class ScrapingAozoraService : ScrapingBase, IScrapingService
     {
         public bool IsMatchSite(Uri uri)
         {

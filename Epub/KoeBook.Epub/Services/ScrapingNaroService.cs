@@ -9,7 +9,7 @@ using static KoeBook.Epub.Utility.ScrapingHelper;
 
 namespace KoeBook.Epub.Services
 {
-    public partial class ScrapingNaroService(IHttpClientFactory httpClientFactory) : IScrapingService
+    public partial class ScrapingNaroService(IHttpClientFactory httpClientFactory) : ScrapingBase, IScrapingService
     {
         private readonly IHttpClientFactory _httpCliantFactory = httpClientFactory;
 
@@ -169,10 +169,7 @@ namespace KoeBook.Epub.Services
                 {
                     if (!string.IsNullOrWhiteSpace(item.InnerHtml))
                     {
-                        foreach (var split in SplitBrace(item.InnerHtml))
-                        {
-                            section.Elements.Add(new Paragraph() { Text = split });
-                        }
+                        AddText(item.InnerHtml);
                     }
                 }
                 else if (item.ChildElementCount == 1)
@@ -206,13 +203,17 @@ namespace KoeBook.Epub.Services
                     {
                         if (!string.IsNullOrWhiteSpace(item.InnerHtml))
                         {
-                            foreach (var split in SplitBrace(item.InnerHtml))
-                            {
-                                section.Elements.Add(new Paragraph() { Text = split });
-                            }
+                            AddText(item.InnerHtml);
                         }
                     }
-                    else if (item.Children[0] is not IHtmlBreakRowElement)
+                    else if (item.Children[0] is IHtmlBreakRowElement)
+                    {
+                        foreach (var split in SplitBrace(GetText()))
+                        {
+                            section.Elements.Add(new Paragraph() { Text = split });
+                        }
+                    }
+                    else
                         throw new EpubDocumentException("Unexpected structure");
                 }
                 else
@@ -231,15 +232,17 @@ namespace KoeBook.Epub.Services
 
                     if (!string.IsNullOrWhiteSpace(item.InnerHtml))
                     {
-                        foreach (var split in SplitBrace(item.InnerHtml))
-                        {
-                            section.Elements.Add(new Paragraph() { Text = split });
-                        }
+                        AddText($"{item.InnerHtml}");
                     }
+                }
+                foreach (var split in SplitBrace(GetText()))
+                {
+                    section.Elements.Add(new Paragraph() { Text = split });
                 }
             }
             return new SectionWithChapterTitle(chapterTitle, section);
         }
+
 
 
 
