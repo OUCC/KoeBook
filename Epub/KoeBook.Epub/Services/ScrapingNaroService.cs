@@ -132,7 +132,7 @@ namespace KoeBook.Epub.Services
 
         private record SectionWithChapterTitle(string? title, Section section);
 
-        private static async Task<SectionWithChapterTitle> ReadPageAsync(string url, bool isRensai, string imageDirectory, CancellationToken ct)
+        private async Task<SectionWithChapterTitle> ReadPageAsync(string url, bool isRensai, string imageDirectory, CancellationToken ct)
         {
             var config = Configuration.Default.WithDefaultLoader();
             using var context = BrowsingContext.New(config);
@@ -219,7 +219,7 @@ namespace KoeBook.Epub.Services
                         }
                     }
                     else if (item.Children[0] is IHtmlBreakRowElement)
-                    {
+                    {   
                         foreach (var split in SplitBrace(GetText()))
                         {
                             section.Elements.Add(new Paragraph() { Text = split });
