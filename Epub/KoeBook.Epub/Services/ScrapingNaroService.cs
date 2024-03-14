@@ -168,7 +168,6 @@ namespace KoeBook.Epub.Services
 
             var section = new Section(sectionTitleElement.InnerHtml);
 
-
             var main_text = doc.QuerySelector("#novel_honbun")
                 ?? throw new EpubDocumentException("There is no honbun.");
 
@@ -245,7 +244,7 @@ namespace KoeBook.Epub.Services
 
                     if (!string.IsNullOrWhiteSpace(item.InnerHtml))
                     {
-                        AddText($"{item.InnerHtml}");
+                        AddText(item.InnerHtml);
                     }
                 }
                 foreach (var split in SplitBrace(GetText()))
@@ -255,7 +254,6 @@ namespace KoeBook.Epub.Services
             }
             return new SectionWithChapterTitle(chapterTitle, section);
         }
-
 
 
         [System.Text.RegularExpressions.GeneratedRegex(@"https://.{5,7}.syosetu.com/(.{7}).?")]
