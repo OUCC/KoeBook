@@ -4,6 +4,10 @@ public static class ScrapingHelper
 {
     public static List<string> SplitBrace(string text)
     {
+        // textが空白だった時paragraphを挿入する処理をスキップ
+        if (string.IsNullOrWhiteSpace(text))
+            return new List<string>();
+
         if (text.Length == 1 && (text == "「" || text == "『" || text == "」" || text == "』"))
             return [text];
 
