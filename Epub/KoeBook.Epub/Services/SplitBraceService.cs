@@ -3,7 +3,7 @@ using KoeBook.Epub.Contracts.Services;
 
 namespace KoeBook.Epub.Services;
 
-public class ScrapingHelperService : IScrapingHelperService
+public class SplitBraceService : ISplitBraceService
 {
     private List<StringBuilder> stringBuilders = new();
 

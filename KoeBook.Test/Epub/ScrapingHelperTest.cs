@@ -83,7 +83,7 @@ public class ScrapingHelperTest
     [MemberData(nameof(TestCases))]
     public void SplitBraceTest(string text, List<string> expected)
     {
-        var helper = new ScrapingHelperService();
+        var helper = new SplitBraceService();
         Assert.Equal(expected, helper.SplitBrace(text));
     }
 }

@@ -8,10 +8,10 @@ using KoeBook.Epub.Models;
 
 namespace KoeBook.Epub.Services
 {
-    public partial class ScrapingNaroService(IHttpClientFactory httpClientFactory, IScrapingHelperService scrapingHelperService) : IScrapingService
+    public partial class ScrapingNaroService(IHttpClientFactory httpClientFactory, ISplitBraceService splitBraceService) : IScrapingService
     {
         private readonly IHttpClientFactory _httpCliantFactory = httpClientFactory;
-        private readonly IScrapingHelperService _scrapingHelperService = scrapingHelperService;
+        private readonly ISplitBraceService _splitBraceService = splitBraceService;
 
         public bool IsMatchSite(Uri uri)
         {
@@ -180,7 +180,7 @@ namespace KoeBook.Epub.Services
                 {
                     if (!string.IsNullOrWhiteSpace(item.InnerHtml))
                     {
-                        _scrapingHelperService.AddText(item.InnerHtml);
+                        _splitBraceService.AddText(item.InnerHtml);
                     }
                 }
                 else if (item.ChildElementCount == 1)
@@ -214,12 +214,12 @@ namespace KoeBook.Epub.Services
                     {
                         if (!string.IsNullOrWhiteSpace(item.InnerHtml))
                         {
-                            _scrapingHelperService.AddText(item.InnerHtml);
+                            _splitBraceService.AddText(item.InnerHtml);
                         }
                     }
                     else if (item.Children[0] is IHtmlBreakRowElement)
                     {
-                        foreach (var split in _scrapingHelperService.SplitBrace(_scrapingHelperService.GetText()))
+                        foreach (var split in _splitBraceService.SplitBrace(_splitBraceService.GetText()))
                         {
                             section.Elements.Add(new Paragraph() { Text = split });
                         }
@@ -244,10 +244,10 @@ namespace KoeBook.Epub.Services
 
                     if (!string.IsNullOrWhiteSpace(item.InnerHtml))
                     {
-                        _scrapingHelperService.AddText(item.InnerHtml);
+                        _splitBraceService.AddText(item.InnerHtml);
                     }
                 }
-                foreach (var split in _scrapingHelperService.SplitBrace(_scrapingHelperService.GetText()))
+                foreach (var split in _splitBraceService.SplitBrace(_splitBraceService.GetText()))
                 {
                     section.Elements.Add(new Paragraph() { Text = split });
                 }
