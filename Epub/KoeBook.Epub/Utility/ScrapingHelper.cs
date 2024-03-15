@@ -42,7 +42,16 @@ public static class ScrapingHelper
         {
             result.Add(text[startIdx..]);
         }
+        return result;
+    }
 
+    public static List<string> SplitBrace(List<string> texts)
+    {
+        var result = new List<string>();
+        foreach (var text in texts)
+        {
+            result.AddRange(SplitBrace(text));
+        }
         return result;
     }
 }
