@@ -18,7 +18,7 @@ public abstract class ScrapingBase
         {
             stringBuilders.Add(new StringBuilder(texts[i]));
         }
-    }   
+    }
 
     internal List<string> GetText()
     {

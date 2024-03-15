@@ -218,7 +218,7 @@ namespace KoeBook.Epub.Services
                         }
                     }
                     else if (item.Children[0] is IHtmlBreakRowElement)
-                    {   
+                    {
                         foreach (var split in SplitBrace(GetText()))
                         {
                             section.Elements.Add(new Paragraph() { Text = split });
