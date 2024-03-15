@@ -1,4 +1,4 @@
-﻿using KoeBook.Epub.Utility;
+﻿using KoeBook.Epub.Services;
 
 namespace KoeBook.Test.Epub;
 
@@ -83,7 +83,7 @@ public class ScrapingHelperTest
     [MemberData(nameof(TestCases))]
     public void SplitBraceTest(string text, List<string> expected)
     {
-        Assert.Equal(expected, ScrapingHelper.SplitBrace(text));
-
+        var helper = new ScrapingHelperService();
+        Assert.Equal(expected, helper.SplitBrace(text));
     }
 }

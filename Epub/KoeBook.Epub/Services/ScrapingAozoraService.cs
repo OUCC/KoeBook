@@ -4,13 +4,14 @@ using AngleSharp.Html.Dom;
 using AngleSharp.Io;
 using KoeBook.Epub.Contracts.Services;
 using KoeBook.Epub.Models;
-using static KoeBook.Epub.Utility.ScrapingHelper;
 
 
 namespace KoeBook.Epub.Services
 {
-    public partial class ScrapingAozoraService : ScrapingBase, IScrapingService
+    public partial class ScrapingAozoraService(IScrapingHelperService scrapingHelperService) : IScrapingService
     {
+        private readonly IScrapingHelperService _scrapingHelperService = scrapingHelperService;
+
         public bool IsMatchSite(Uri uri)
         {
             return uri.Host == "www.aozora.gr.jp";
@@ -171,7 +172,7 @@ namespace KoeBook.Epub.Services
                                 paragraph.Text += TextProcess(midashi);
                                 document.Chapters[chapterNum].Sections[sectionNum].Elements.Add(new Paragraph());
 
-                                foreach (var splitText in SplitBrace(TextProcess(midashi)))
+                                foreach (var splitText in _scrapingHelperService.SplitBrace(TextProcess(midashi)))
                                 {
                                     if (document.Chapters[chapterNum].Sections[sectionNum].Elements[^1] is Paragraph paragraph1)
                                     {
@@ -190,7 +191,7 @@ namespace KoeBook.Epub.Services
                             document.EnsureParagraph(chapterNum, sectionNum);
                             if ((document.Chapters[chapterNum].Sections[sectionNum].Elements[^1] is Paragraph paragraph))
                             {
-                                var split = SplitBrace(TextProcess(element));
+                                var split = _scrapingHelperService.SplitBrace(TextProcess(element));
                                 for (int i = 0; i < split.Count - 1; i++)
                                 {
                                     if (document.Chapters[chapterNum].Sections[sectionNum].Elements[^1] is Paragraph paragraph1)
@@ -228,7 +229,7 @@ namespace KoeBook.Epub.Services
                             document.EnsureParagraph(chapterNum, sectionNum);
                             if ((document.Chapters[chapterNum].Sections[sectionNum].Elements[^1] is Paragraph paragraph))
                             {
-                                foreach (var splitText in SplitBrace(TextProcess(element)))
+                                foreach (var splitText in _scrapingHelperService.SplitBrace(TextProcess(element)))
                                 {
                                     if (document.Chapters[chapterNum].Sections[sectionNum].Elements[^1] is Paragraph paragraph1)
                                     {
@@ -339,7 +340,7 @@ namespace KoeBook.Epub.Services
                                 document.EnsureParagraph(chapterNum, sectionNum);
                                 if ((document.Chapters[chapterNum].Sections[sectionNum].Elements[^1] is Paragraph paragraph))
                                 {
-                                    foreach (var splitText in SplitBrace(TextProcess(element)))
+                                    foreach (var splitText in _scrapingHelperService.SplitBrace(TextProcess(element)))
                                     {
                                         if (document.Chapters[chapterNum].Sections[sectionNum].Elements[^1] is Paragraph paragraph1)
                                         {
@@ -374,7 +375,7 @@ namespace KoeBook.Epub.Services
                         document.EnsureParagraph(chapterNum, sectionNum);
                         if ((document.Chapters[chapterNum].Sections[sectionNum].Elements[^1] is Paragraph paragraph))
                         {
-                            var split = SplitBrace(TextProcess(element));
+                            var split = _scrapingHelperService.SplitBrace(TextProcess(element));
                             for (int i = 0; i < split.Count - 1; i++)
                             {
                                 if (document.Chapters[chapterNum].Sections[sectionNum].Elements[^1] is Paragraph paragraph1)
@@ -416,7 +417,7 @@ namespace KoeBook.Epub.Services
                     {
                         paragraph.Text += TextProcess(element);
 
-                        var split = SplitBrace(TextProcess(element));
+                        var split = _scrapingHelperService.SplitBrace(TextProcess(element));
                         for (int i = 0; i < split.Count - 1; i++)
                         {
                             if (document.Chapters[chapterNum].Sections[sectionNum].Elements[^1] is Paragraph paragraph1)
@@ -462,7 +463,7 @@ namespace KoeBook.Epub.Services
                             document.EnsureParagraph(chapterNum, sectionNum);
                             if ((document.Chapters[chapterNum].Sections[sectionNum].Elements[^1] is Paragraph paragraph))
                             {
-                                var split = SplitBrace(TextReplace(nextNode.Text()));
+                                var split = _scrapingHelperService.SplitBrace(TextReplace(nextNode.Text()));
                                 for (int i = 0; i < split.Count - 1; i++)
                                 {
                                     if (document.Chapters[chapterNum].Sections[sectionNum].Elements[^1] is Paragraph paragraph1)

@@ -1,12 +1,17 @@
-﻿namespace KoeBook.Epub.Utility;
+﻿using System.Text;
+using KoeBook.Epub.Contracts.Services;
 
-public static class ScrapingHelper
+namespace KoeBook.Epub.Services;
+
+public class ScrapingHelperService : IScrapingHelperService
 {
-    public static List<string> SplitBrace(string text)
+    private List<StringBuilder> stringBuilders = new();
+
+    public List<string> SplitBrace(string text)
     {
-        // textが空白だった時paragraphを挿入する処理をスキップ
+        // textが空白だった時 paragraph を挿入する処理をスキップ
         if (string.IsNullOrWhiteSpace(text))
-            return new List<string>();
+            return [];
 
         if (text.Length == 1 && (text == "「" || text == "『" || text == "」" || text == "』"))
             return [text];
@@ -45,13 +50,38 @@ public static class ScrapingHelper
         return result;
     }
 
-    public static List<string> SplitBrace(List<string> texts)
+    public List<string> SplitBrace(List<string> texts)
     {
         var result = new List<string>();
         foreach (var text in texts)
         {
             result.AddRange(SplitBrace(text));
         }
+        return result;
+    }
+
+    public void AddText(string text)
+    {
+        stringBuilders[^1].Append(text);
+    }
+
+    public void AddText(List<string> texts)
+    {
+        stringBuilders[^1].Append(texts[0]);
+        for (int i = 1; i < texts.Count; i++)
+        {
+            stringBuilders.Add(new StringBuilder(texts[i]));
+        }
+    }
+
+    public List<string> GetText()
+    {
+        List<string> result = new List<string>();
+        foreach (StringBuilder stringBuilder in stringBuilders)
+        {
+            result.Add(stringBuilder.ToString());
+        }
+        stringBuilders.Clear();
         return result;
     }
 }
