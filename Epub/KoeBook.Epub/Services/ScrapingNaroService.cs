@@ -132,7 +132,7 @@ namespace KoeBook.Epub.Services
 
         private record SectionWithChapterTitle(string? title, Section section);
 
-        private async Task<SectionWithChapterTitle> ReadPageAsync(string url, bool isRensai, string imageDirectory, CancellationToken ct)
+        private async ValueTask<SectionWithChapterTitle> ReadPageAsync(string url, bool isRensai, string imageDirectory, CancellationToken ct)
         {
             var config = Configuration.Default.WithDefaultLoader();
             using var context = BrowsingContext.New(config);
