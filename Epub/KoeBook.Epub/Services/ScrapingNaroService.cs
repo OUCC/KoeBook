@@ -95,7 +95,7 @@ namespace KoeBook.Epub.Services
             return document;
         }
 
-        private async ValueTask<NovelInfo> GetNovelInfoAsync(string ncode, CancellationToken ct)
+        internal async ValueTask<NovelInfo> GetNovelInfoAsync(string ncode, CancellationToken ct)
         {
             // APIを利用して、noveltype : 連載(1)か短編(2)か、general_all_no : 全掲載部分数
             var request = new HttpRequestMessage(System.Net.Http.HttpMethod.Get, $"https://api.syosetu.com/novelapi/api/?of=ga-nt-n&out=json&ncode={ncode}");
@@ -130,23 +130,22 @@ namespace KoeBook.Epub.Services
             return novelInfo;
         }
 
-        private static string GetNcode(string url)
+        internal static string GetNcode(string url)
         {
-            var uri = new Uri(url);
+            var uri = new Uri(url, new UriCreationOptions() { DangerousDisablePathAndQueryCanonicalization = true});
             if (uri.GetLeftPart(UriPartial.Authority) != "https://ncode.syosetu.com")
                 throw new EbookException(ExceptionType.InvalidUrl);
 
-            switch (uri.Segments)
+            return uri.Segments switch
             {
-                case [var ncode] when IsAscii(ncode): // https://ncode.syosetu.com/n0000a/ のとき
-                    return ncode;
-                case [var ncode, var num] when IsAscii(ncode) && num.All(char.IsAsciiDigit): // https://ncode.syosetu.com/n0000a/12 のとき
-                    return ncode;
-                case ["novelview", "infotop", "ncode", var ncode] when IsAscii(ncode): // https://ncode.syosetu.com/novelview/infotop/ncode/n0000a/ のとき
-                    return ncode;
-            }
-
-            throw new EbookException(ExceptionType.InvalidUrl);
+                // https://ncode.syosetu.com/n0000a/ のとき
+                ["/", var ncode] when IsAscii(ncode) => ncode.TrimEnd('/'),
+                // https://ncode.syosetu.com/n0000a/12 のとき
+                ["/", var ncode, var num] when IsAscii(ncode) && num.TrimEnd('/').All(char.IsAsciiDigit) => ncode.TrimEnd('/'),
+                // https://ncode.syosetu.com/novelview/infotop/ncode/n0000a/ のとき
+                ["/", "novelview/", "infotop/", "ncode/", var ncode] when IsAscii(ncode) => ncode.TrimEnd('/'),
+                _ => throw new EbookException(ExceptionType.InvalidUrl),
+            };
 
             static bool IsAscii(string str)
                 => str.All(char.IsAscii);
@@ -160,7 +159,7 @@ namespace KoeBook.Epub.Services
         /// <param name="Ncode">ncode</param>
         /// <param name="Noveltype">1: 連載, 2: 短編</param>
         /// <param name="GeneralAllNo">話数 (短編の場合は1)</param>
-        private record NovelInfo(
+        internal record NovelInfo(
             [property: JsonRequired] string Ncode,
             [property: JsonRequired] int Noveltype,
             [property: JsonPropertyName("general_all_no"), JsonRequired] int GeneralAllNo)

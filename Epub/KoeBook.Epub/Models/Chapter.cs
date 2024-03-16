@@ -2,6 +2,6 @@
 
 public class Chapter
 {
-    public List<Section> Sections { get; } = [];
+    public List<Section> Sections { get; init; } = [];
     public string? Title { get; set; }
 }
