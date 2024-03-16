@@ -103,6 +103,7 @@ public partial class App : Application
                     .AddSingleton<IScrapingService, ScrapingAozoraService>()
                     .AddSingleton<IScrapingService, ScrapingNaroService>();
                 services.AddSingleton<IEpubCreateService, EpubCreateService>();
+                services.AddSingleton<ISplitBraceService, SplitBraceService>();
 
                 // Views and ViewModels
                 services.AddTransient<SettingsViewModel>();
