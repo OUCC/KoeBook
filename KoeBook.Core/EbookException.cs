@@ -54,5 +54,11 @@ public enum ExceptionType
     UnexpectedStructure,
 
     [EnumMember(Value = "HTTPリクエストエラー")]
-    HttpResponseError
+    HttpResponseError,
+
+    /// <summary>
+    /// 無効なURLです
+    /// </summary>
+    [EnumMember(Value = "無効なURLです")]
+    InvalidUrl,
 }
