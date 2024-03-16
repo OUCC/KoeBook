@@ -132,7 +132,7 @@ namespace KoeBook.Epub.Services
 
         internal static string GetNcode(string url)
         {
-            var uri = new Uri(url, new UriCreationOptions() { DangerousDisablePathAndQueryCanonicalization = true});
+            var uri = new Uri(url, new UriCreationOptions() { DangerousDisablePathAndQueryCanonicalization = true });
             if (uri.GetLeftPart(UriPartial.Authority) != "https://ncode.syosetu.com")
                 throw new EbookException(ExceptionType.InvalidUrl);
 

@@ -11,7 +11,7 @@ public class DiTestBase
             .ConfigureCore()
             .Build();
 
-    protected T GetService<T>() where T: notnull
+    protected T GetService<T>() where T : notnull
     {
         return Host.Services.GetRequiredService<T>();
     }
