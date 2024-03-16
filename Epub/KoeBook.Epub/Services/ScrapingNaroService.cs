@@ -6,13 +6,15 @@ using AngleSharp.Io;
 using KoeBook.Core;
 using KoeBook.Epub.Contracts.Services;
 using KoeBook.Epub.Models;
+using Microsoft.Extensions.DependencyInjection;
 using static KoeBook.Epub.Utility.ScrapingHelper;
 
 namespace KoeBook.Epub.Services
 {
-    public partial class ScrapingNaroService(IHttpClientFactory httpClientFactory) : IScrapingService
+    public partial class ScrapingNaroService(IHttpClientFactory httpClientFactory, [FromKeyedServices(nameof(ScrapingNaroService))] IScrapingClientService scrapingClientService) : IScrapingService
     {
         private readonly IHttpClientFactory _httpCliantFactory = httpClientFactory;
+        private readonly IScrapingClientService _scrapingClientService = scrapingClientService;
 
         public bool IsMatchSite(Uri uri)
         {

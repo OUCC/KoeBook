@@ -60,6 +60,9 @@ public partial class App : Application
             .UseContentRoot(AppContext.BaseDirectory)
             .ConfigureServices((context, services) =>
             {
+                // System
+                services.AddSingleton(TimeProvider.System);
+
                 // Default Activation Handler
                 services.AddTransient<ActivationHandler<LaunchActivatedEventArgs>, DefaultActivationHandler>();
 
@@ -99,7 +102,11 @@ public partial class App : Application
                 services.AddSingleton<ILlmAnalyzerService, ChatGptAnalyzerService>();
                 services.AddSingleton<OpenAI.Interfaces.IOpenAIService, MyOpenAiService>();
 
-                services.AddSingleton<IScraperSelectorService, ScraperSelectorService>()
+                // Epub Services
+                services
+                    .AddKeyedSingleton<IScrapingClientService, ScrapingClientService>(nameof(ScrapingAozoraService))
+                    .AddKeyedSingleton<IScrapingClientService, ScrapingClientService>(nameof(ScrapingNaroService))
+                    .AddSingleton<IScraperSelectorService, ScraperSelectorService>()
                     .AddSingleton<IScrapingService, ScrapingAozoraService>()
                     .AddSingleton<IScrapingService, ScrapingNaroService>();
                 services.AddSingleton<IEpubCreateService, EpubCreateService>();

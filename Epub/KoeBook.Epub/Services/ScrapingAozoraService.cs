@@ -5,13 +5,16 @@ using AngleSharp.Io;
 using KoeBook.Core;
 using KoeBook.Epub.Contracts.Services;
 using KoeBook.Epub.Models;
+using Microsoft.Extensions.DependencyInjection;
 using static KoeBook.Epub.Utility.ScrapingHelper;
 
 
 namespace KoeBook.Epub.Services
 {
-    public partial class ScrapingAozoraService : IScrapingService
+    public partial class ScrapingAozoraService([FromKeyedServices(nameof(ScrapingAozoraService))] IScrapingClientService scrapingClientService) : IScrapingService
     {
+        private readonly IScrapingClientService _scrapingClientService = scrapingClientService;
+
         public bool IsMatchSite(Uri uri)
         {
             return uri.Host == "www.aozora.gr.jp";
