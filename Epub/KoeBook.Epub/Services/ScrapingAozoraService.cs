@@ -2,15 +2,19 @@
 using AngleSharp.Dom;
 using AngleSharp.Html.Dom;
 using AngleSharp.Io;
+using KoeBook.Core;
 using KoeBook.Epub.Contracts.Services;
 using KoeBook.Epub.Models;
+using Microsoft.Extensions.DependencyInjection;
 
 
 namespace KoeBook.Epub.Services
 {
-    public partial class ScrapingAozoraService(ISplitBraceService splitBraceService) : IScrapingService
+    public partial class ScrapingAozoraService(ISplitBraceService splitBraceService, [FromKeyedServices(nameof(ScrapingAozoraService))] IScrapingClientService scrapingClientService) : IScrapingService
     {
         private readonly ISplitBraceService _splitBraceService = splitBraceService;
+        private readonly IScrapingClientService _scrapingClientService = scrapingClientService;
+
 
         public bool IsMatchSite(Uri uri)
         {
@@ -30,11 +34,11 @@ namespace KoeBook.Epub.Services
 
             // title の取得
             var bookTitle = doc.QuerySelector(".title")
-                ?? throw new EpubDocumentException($"Failed to get title properly.\nYou may be able to get proper URL at {GetCardUrl(url)}");
+                ?? throw new EbookException(ExceptionType.WebScrapingFailed, $"タイトルの取得に失敗しました。\n以下のリンクから正しい小説のリンクを取得してください。\n{GetCardUrl(url)}");
 
             // auther の取得
             var bookAuther = doc.QuerySelector(".author")
-                ?? throw new EpubDocumentException($"Failed to get auther properly.\nYou may be able to get proper URL at {GetCardUrl(url)}");
+                ?? throw new EbookException(ExceptionType.WebScrapingFailed, $"著者の取得に失敗しました。\n以下のリンクから正しい小説のリンクを取得してください。\n{GetCardUrl(url)}");
 
             // EpubDocument の生成
             var document = new EpubDocument(TextReplace(bookTitle.InnerHtml), TextReplace(bookAuther.InnerHtml), coverFilePath, id)
@@ -112,10 +116,10 @@ namespace KoeBook.Epub.Services
                     if (midashi != null)
                     {
                         if (midashi.Id == null)
-                            throw new EpubDocumentException("Unecpected structure of HTML File: div tag with class=\"midashi_anchor\", but id=\"midashi___\" exist");
+                            throw new EbookException(ExceptionType.WebScrapingFailed, "予期しないHTMLの構造です。\nclass=\"midashi_anchor\"ではなくid=\"midashi___\"が存在します。");
 
                         if (!int.TryParse(midashi.Id.Replace("midashi", ""), out var midashiId))
-                            throw new EpubDocumentException($"Unexpected id of Anchor tag was found: id = {midashi.Id}");
+                            throw new EbookException(ExceptionType.WebScrapingFailed, $"予期しないアンカータグが見つかりました。id = {midashi.Id}");
 
                         if (contentsIds.Contains(midashiId))
                         {

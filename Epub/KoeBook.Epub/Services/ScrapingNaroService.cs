@@ -3,15 +3,18 @@ using AngleSharp;
 using AngleSharp.Dom;
 using AngleSharp.Html.Dom;
 using AngleSharp.Io;
+using KoeBook.Core;
 using KoeBook.Epub.Contracts.Services;
 using KoeBook.Epub.Models;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace KoeBook.Epub.Services
 {
-    public partial class ScrapingNaroService(IHttpClientFactory httpClientFactory, ISplitBraceService splitBraceService) : IScrapingService
+    public partial class ScrapingNaroService(IHttpClientFactory httpClientFactory, ISplitBraceService splitBraceService, [FromKeyedServices(nameof(ScrapingNaroService))] IScrapingClientService scrapingClientService) : IScrapingService
     {
         private readonly IHttpClientFactory _httpCliantFactory = httpClientFactory;
         private readonly ISplitBraceService _splitBraceService = splitBraceService;
+        private readonly IScrapingClientService _scrapingClientService = scrapingClientService;
 
         public bool IsMatchSite(Uri uri)
         {
@@ -26,12 +29,12 @@ namespace KoeBook.Epub.Services
 
             // title の取得
             var bookTitleElement = doc.QuerySelector(".novel_title")
-                ?? throw new EpubDocumentException($"Failed to get title properly.\nUrl may be not collect");
+                ?? throw new EbookException(ExceptionType.WebScrapingFailed, $"タイトルを取得できませんでした");
             var bookTitle = bookTitleElement.InnerHtml;
 
             // auther の取得
             var bookAutherElement = doc.QuerySelector(".novel_writername")
-                ?? throw new EpubDocumentException($"Failed to get auther properly.\nUrl may be not collect");
+                ?? throw new EbookException(ExceptionType.WebScrapingFailed, $"著者を取得できませんでした");
             var bookAuther = string.Empty;
             if (bookAutherElement.QuerySelector("a") is IHtmlAnchorElement bookAutherAnchorElement)
             {
@@ -54,13 +57,13 @@ namespace KoeBook.Epub.Services
             var result = await client.SendAsync(message, ct).ConfigureAwait(false);
             var test = await result.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
             if (!result.IsSuccessStatusCode)
-                throw new EpubDocumentException("Url may be not Correct");
+                throw new EbookException(ExceptionType.HttpResponseError, $"URLが正しいかどうかやインターネットに正常に接続されているかどうかを確認してください。\nステータスコード: {result.StatusCode}\nメッセージ：{test}");
 
             var content = await result.Content.ReadFromJsonAsync<BookInfo[]>(ct).ConfigureAwait(false);
             if (content != null)
             {
                 if (content[1].noveltype == null)
-                    throw new EpubDocumentException("faild to get data by Narou API");
+                    throw new EbookException(ExceptionType.NarouApiFailed);
 
                 if (content[1].noveltype == 2)
                 {
@@ -73,7 +76,7 @@ namespace KoeBook.Epub.Services
                 }
 
                 if (allNum == 0)
-                    throw new EpubDocumentException("faild to get data by Narou API");
+                    throw new EbookException(ExceptionType.NarouApiFailed);
             }
 
             var document = new EpubDocument(bookTitle, bookAuther, coverFilePath, id);
@@ -91,7 +94,7 @@ namespace KoeBook.Epub.Services
                 foreach (var sectionWithChapterTitle in SectionWithChapterTitleList)
                 {
                     if (sectionWithChapterTitle == null)
-                        throw new EpubDocumentException("failed to get page");
+                        throw new EbookException(ExceptionType.WebScrapingFailed, "ページの取得に失敗しました");
 
                     if (sectionWithChapterTitle.title != null)
                     {
@@ -162,19 +165,19 @@ namespace KoeBook.Epub.Services
             }
 
             if (sectionTitleElement == null)
-                throw new EpubDocumentException("Can not find title of page");
+                throw new EbookException(ExceptionType.WebScrapingFailed, "ページのタイトルが見つかりません");
 
             var sectionTitle = sectionTitleElement.InnerHtml;
 
             var section = new Section(sectionTitleElement.InnerHtml);
 
             var main_text = doc.QuerySelector("#novel_honbun")
-                ?? throw new EpubDocumentException("There is no honbun.");
+                ?? throw new EbookException(ExceptionType.WebScrapingFailed, "本文がありません");
 
             foreach (var item in main_text.Children)
             {
                 if (item is not IHtmlParagraphElement)
-                    throw new EpubDocumentException("Unexpected structure");
+                    throw new EbookException(ExceptionType.UnexpectedStructure);
 
                 if (item.ChildElementCount == 0)
                 {
@@ -188,12 +191,12 @@ namespace KoeBook.Epub.Services
                     if (item.Children[0] is IHtmlAnchorElement aElement)
                     {
                         if (aElement.ChildElementCount != 1)
-                            throw new EpubDocumentException("Unexpected structure");
+                            throw new EbookException(ExceptionType.UnexpectedStructure);
 
                         if (aElement.Children[0] is IHtmlImageElement img)
                         {
                             if (img.Source == null)
-                                throw new EpubDocumentException("Unexpected structure");
+                                throw new EbookException(ExceptionType.UnexpectedStructure);
 
                             // 画像のダウンロード
                             var loader = context.GetService<IDocumentLoader>();
@@ -225,7 +228,7 @@ namespace KoeBook.Epub.Services
                         }
                     }
                     else
-                        throw new EpubDocumentException("Unexpected structure");
+                        throw new EbookException(ExceptionType.UnexpectedStructure);
                 }
                 else
                 {
@@ -240,7 +243,7 @@ namespace KoeBook.Epub.Services
                     }
 
                     if (!isAllRuby)
-                        throw new EpubDocumentException("Unexpected structure");
+                        throw new EbookException(ExceptionType.UnexpectedStructure);
 
                     if (!string.IsNullOrWhiteSpace(item.InnerHtml))
                     {
