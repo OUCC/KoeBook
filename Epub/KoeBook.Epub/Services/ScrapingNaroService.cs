@@ -135,12 +135,7 @@ namespace KoeBook.Epub.Services
                 if (item.ChildElementCount == 0)
                 {
                     if (!string.IsNullOrWhiteSpace(item.InnerHtml))
-                    {
-                        foreach (var split in ScrapingHelper.SplitBrace(item.InnerHtml))
-                        {
-                            section.Elements.Add(new Paragraph() { Text = split });
-                        }
-                    }
+                        section.Elements.AddRange(ScrapingHelper.SplitBrace(item.InnerHtml).Select(line => new Paragraph() { Text = line }));
                 }
                 else if (item.ChildElementCount == 1)
                 {
@@ -171,17 +166,7 @@ namespace KoeBook.Epub.Services
                 }
                 else
                 {
-                    bool isAllRuby = true;
-                    foreach (var tags in item.Children)
-                    {
-                        if (tags.TagName != "RUBY")
-                        {
-                            isAllRuby = false;
-                            break;
-                        }
-                    }
-
-                    if (!isAllRuby)
+                    if (item.Children.Any(t => t.TagName != "RUBY"))
                         throw new EbookException(ExceptionType.UnexpectedStructure);
 
                     if (!string.IsNullOrWhiteSpace(item.InnerHtml))
@@ -234,12 +219,12 @@ namespace KoeBook.Epub.Services
 
             return uri.Segments switch
             {
-            // https://ncode.syosetu.com/n0000a/ のとき
-            ["/", var ncode] when IsAscii(ncode) => ncode.TrimEnd('/'),
-            // https://ncode.syosetu.com/n0000a/12 のとき
-            ["/", var ncode, var num] when IsAscii(ncode) && num.TrimEnd('/').All(char.IsAsciiDigit) => ncode.TrimEnd('/'),
-            // https://ncode.syosetu.com/novelview/infotop/ncode/n0000a/ のとき
-            ["/", "novelview/", "infotop/", "ncode/", var ncode] when IsAscii(ncode) => ncode.TrimEnd('/'),
+                // https://ncode.syosetu.com/n0000a/ のとき
+                ["/", var ncode] when IsAscii(ncode) => ncode.TrimEnd('/'),
+                // https://ncode.syosetu.com/n0000a/12 のとき
+                ["/", var ncode, var num] when IsAscii(ncode) && num.TrimEnd('/').All(char.IsAsciiDigit) => ncode.TrimEnd('/'),
+                // https://ncode.syosetu.com/novelview/infotop/ncode/n0000a/ のとき
+                ["/", "novelview/", "infotop/", "ncode/", var ncode] when IsAscii(ncode) => ncode.TrimEnd('/'),
                 _ => throw new EbookException(ExceptionType.InvalidUrl),
             };
 
