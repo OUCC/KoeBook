@@ -12,7 +12,7 @@ internal static class Startup
     /// <summary>
     /// System, Core, Epub のDIを登録します
     /// </summary>
-    public static IHostBuilder ConfigureCore(this IHostBuilder builder)
+    public static IHostBuilder UseCoreStartup(this IHostBuilder builder)
     {
         builder.ConfigureServices((context, services) =>
         {

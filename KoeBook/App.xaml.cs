@@ -58,7 +58,7 @@ public partial class App : Application
         Host = Microsoft.Extensions.Hosting.Host
             .CreateDefaultBuilder()
             .UseContentRoot(AppContext.BaseDirectory)
-            .ConfigureCore()
+            .UseCoreStartup()
             .ConfigureServices((context, services) =>
             {
                 // Default Activation Handler

@@ -6,13 +6,17 @@ namespace KoeBook.Test;
 
 public class DiTestBase
 {
-    protected IHost Host { get; } = Microsoft.Extensions.Hosting.Host
-            .CreateDefaultBuilder()
-            .ConfigureCore()
-            .Build();
+    protected IHost Host { get; } = CreateDefaultBuilder().Build();
 
     protected T GetService<T>() where T : notnull
     {
         return Host.Services.GetRequiredService<T>();
+    }
+
+    protected static IHostBuilder CreateDefaultBuilder()
+    {
+        return Microsoft.Extensions.Hosting.Host
+            .CreateDefaultBuilder()
+            .ConfigureCore();
     }
 }
