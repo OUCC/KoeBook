@@ -17,6 +17,6 @@ public class DiTestBase
     {
         return Microsoft.Extensions.Hosting.Host
             .CreateDefaultBuilder()
-            .ConfigureCore();
+            .UseCoreStartup();
     }
 }
