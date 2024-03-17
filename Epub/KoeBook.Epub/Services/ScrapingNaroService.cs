@@ -4,6 +4,7 @@ using AngleSharp.Dom;
 using AngleSharp.Html.Dom;
 using AngleSharp.Io;
 using KoeBook.Core;
+using KoeBook.Core.Utility;
 using KoeBook.Epub.Contracts.Services;
 using KoeBook.Epub.Models;
 using Microsoft.Extensions.DependencyInjection;
@@ -137,6 +138,8 @@ namespace KoeBook.Epub.Services
 
         private async ValueTask<SectionWithChapterTitle> ReadPageAsync(string url, bool isRensai, string imageDirectory, CancellationToken ct)
         {
+            var store = new StringStorer();
+
             var config = Configuration.Default.WithDefaultLoader();
             using var context = BrowsingContext.New(config);
             var doc = await context.OpenAsync(url, ct).ConfigureAwait(false);
@@ -183,7 +186,7 @@ namespace KoeBook.Epub.Services
                 {
                     if (!string.IsNullOrWhiteSpace(item.InnerHtml))
                     {
-                        _splitBraceService.AddText(item.InnerHtml);
+                        store.Store(item.InnerHtml);
                     }
                 }
                 else if (item.ChildElementCount == 1)
@@ -217,12 +220,12 @@ namespace KoeBook.Epub.Services
                     {
                         if (!string.IsNullOrWhiteSpace(item.InnerHtml))
                         {
-                            _splitBraceService.AddText(item.InnerHtml);
+                            store.Store(item.InnerHtml);
                         }
                     }
                     else if (item.Children[0] is IHtmlBreakRowElement)
                     {
-                        foreach (var split in _splitBraceService.SplitBrace(_splitBraceService.GetText()))
+                        foreach (var split in _splitBraceService.SplitBrace(store.Release()))
                         {
                             section.Elements.Add(new Paragraph() { Text = split });
                         }
@@ -247,10 +250,10 @@ namespace KoeBook.Epub.Services
 
                     if (!string.IsNullOrWhiteSpace(item.InnerHtml))
                     {
-                        _splitBraceService.AddText(item.InnerHtml);
+                        store.Store(item.InnerHtml);
                     }
                 }
-                foreach (var split in _splitBraceService.SplitBrace(_splitBraceService.GetText()))
+                foreach (var split in _splitBraceService.SplitBrace(store.Release()))
                 {
                     section.Elements.Add(new Paragraph() { Text = split });
                 }

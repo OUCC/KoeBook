@@ -5,8 +5,6 @@ namespace KoeBook.Epub.Services;
 
 public class SplitBraceService : ISplitBraceService
 {
-    private List<StringBuilder> stringBuilders = new();
-
     public List<string> SplitBrace(string text)
     {
         // textが空白だった時 paragraph を挿入する処理をスキップ
@@ -57,31 +55,6 @@ public class SplitBraceService : ISplitBraceService
         {
             result.AddRange(SplitBrace(text));
         }
-        return result;
-    }
-
-    public void AddText(string text)
-    {
-        stringBuilders[^1].Append(text);
-    }
-
-    public void AddText(List<string> texts)
-    {
-        stringBuilders[^1].Append(texts[0]);
-        for (int i = 1; i < texts.Count; i++)
-        {
-            stringBuilders.Add(new StringBuilder(texts[i]));
-        }
-    }
-
-    public List<string> GetText()
-    {
-        List<string> result = new List<string>();
-        foreach (StringBuilder stringBuilder in stringBuilders)
-        {
-            result.Add(stringBuilder.ToString());
-        }
-        stringBuilders.Clear();
         return result;
     }
 }
