@@ -5,14 +5,17 @@ namespace KoeBook.Epub.Services;
 
 public class SplitBraceService : ISplitBraceService
 {
-    public List<string> SplitBrace(string text)
+    public IEnumerable<string> SplitBrace(string text)
     {
         // textが空白だった時 paragraph を挿入する処理をスキップ
         if (string.IsNullOrWhiteSpace(text))
-            return [];
+            yield break;
 
-        if (text.Length == 1 && (text == "「" || text == "『" || text == "」" || text == "』"))
-            return [text];
+        if (text.Length == 1)
+        {
+            yield return text;
+            yield break;
+        }
 
         var bracket = 0;
         var brackets = new int[text.Length];
@@ -24,7 +27,6 @@ public class SplitBraceService : ISplitBraceService
             brackets[i] = bracket;
         }
 
-        var result = new List<string>();
         var mn = Math.Min(0, brackets.Min());
         var startIdx = 0;
         for (var i = 0; i < brackets.Length; i++)
@@ -32,29 +34,23 @@ public class SplitBraceService : ISplitBraceService
             brackets[i] -= mn;
             if ((text[i] == '「' || text[i] == '『') && brackets[i] == 1 && i != 0 && startIdx != i)
             {
-                result.Add(text[startIdx..i]);
+                yield return text[startIdx..i];
                 startIdx = i;
             }
             if ((text[i] == '」' || text[i] == '』') && brackets[i] == 0)
             {
-                result.Add(text[startIdx..(i + 1)]);
+                yield return text[startIdx..(i + 1)];
                 startIdx = i + 1;
             }
         }
         if (startIdx != text.Length)
         {
-            result.Add(text[startIdx..]);
+            yield return text[startIdx..];
         }
-        return result;
     }
 
-    public List<string> SplitBrace(List<string> texts)
+    public IEnumerable<string> SplitBrace(List<string> texts)
     {
-        var result = new List<string>();
-        foreach (var text in texts)
-        {
-            result.AddRange(SplitBrace(text));
-        }
-        return result;
+        return texts.SelectMany(text => SplitBrace(text));
     }
 }

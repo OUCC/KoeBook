@@ -2,6 +2,6 @@
 
 public interface ISplitBraceService
 {
-    List<string> SplitBrace(string text);
-    List<string> SplitBrace(List<string> texts);
+    IEnumerable<string> SplitBrace(string text);
+    IEnumerable<string> SplitBrace(List<string> texts);
 }

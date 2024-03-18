@@ -195,7 +195,7 @@ namespace KoeBook.Epub.Services
                             document.EnsureParagraph(chapterNum, sectionNum);
                             if ((document.Chapters[chapterNum].Sections[sectionNum].Elements[^1] is Paragraph paragraph))
                             {
-                                var split = _splitBraceService.SplitBrace(TextProcess(element));
+                                var split = _splitBraceService.SplitBrace(TextProcess(element)).ToList();
                                 for (int i = 0; i < split.Count - 1; i++)
                                 {
                                     if (document.Chapters[chapterNum].Sections[sectionNum].Elements[^1] is Paragraph paragraph1)
@@ -379,7 +379,7 @@ namespace KoeBook.Epub.Services
                         document.EnsureParagraph(chapterNum, sectionNum);
                         if ((document.Chapters[chapterNum].Sections[sectionNum].Elements[^1] is Paragraph paragraph))
                         {
-                            var split = _splitBraceService.SplitBrace(TextProcess(element));
+                            var split = _splitBraceService.SplitBrace(TextProcess(element)).ToList();
                             for (int i = 0; i < split.Count - 1; i++)
                             {
                                 if (document.Chapters[chapterNum].Sections[sectionNum].Elements[^1] is Paragraph paragraph1)
@@ -421,7 +421,7 @@ namespace KoeBook.Epub.Services
                     {
                         paragraph.Text += TextProcess(element);
 
-                        var split = _splitBraceService.SplitBrace(TextProcess(element));
+                        var split = _splitBraceService.SplitBrace(TextProcess(element)).ToList();
                         for (int i = 0; i < split.Count - 1; i++)
                         {
                             if (document.Chapters[chapterNum].Sections[sectionNum].Elements[^1] is Paragraph paragraph1)
@@ -467,7 +467,7 @@ namespace KoeBook.Epub.Services
                             document.EnsureParagraph(chapterNum, sectionNum);
                             if ((document.Chapters[chapterNum].Sections[sectionNum].Elements[^1] is Paragraph paragraph))
                             {
-                                var split = _splitBraceService.SplitBrace(TextReplace(nextNode.Text()));
+                                var split = _splitBraceService.SplitBrace(TextReplace(nextNode.Text())).ToList();
                                 for (int i = 0; i < split.Count - 1; i++)
                                 {
                                     if (document.Chapters[chapterNum].Sections[sectionNum].Elements[^1] is Paragraph paragraph1)
