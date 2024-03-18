@@ -48,9 +48,4 @@ public class SplitBraceService : ISplitBraceService
             yield return text[startIdx..];
         }
     }
-
-    public IEnumerable<string> SplitBrace(List<string> texts)
-    {
-        return texts.SelectMany(text => SplitBrace(text));
-    }
 }
