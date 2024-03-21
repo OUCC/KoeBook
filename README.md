@@ -5,7 +5,8 @@
 
 
 ## お知らせ  
-現在開発は[こちら](https://github.com/OUCC/KoeBook)に移行しました。
+- 現在開発は[こちら](https://github.com/OUCC/KoeBook)に移行しました。
+- [LINEヤフー株式会社様より企業賞を受賞しました。](https://kc3.me/news/2405/)
 
 ## チーム名
 チームH OUCC KC3 Hack 出張部
