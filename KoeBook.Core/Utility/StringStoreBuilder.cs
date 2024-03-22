@@ -3,7 +3,7 @@ using KoeBook.Core.Utility;
 
 namespace KoeBook.Core.Utility
 {
-    public class StringStorer
+    public class StringStoreBuilder
     {
         private StringBuilder _stringBuilder = new();
         private List<string> _texts = new List<string>();

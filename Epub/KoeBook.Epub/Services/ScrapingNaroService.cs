@@ -138,7 +138,7 @@ namespace KoeBook.Epub.Services
 
         private async ValueTask<SectionWithChapterTitle> ReadPageAsync(string url, bool isRensai, string imageDirectory, CancellationToken ct)
         {
-            var store = new StringStorer();
+            var store = new StringStoreBuilder();
 
             var config = Configuration.Default.WithDefaultLoader();
             using var context = BrowsingContext.New(config);
