@@ -159,7 +159,7 @@ RESTART:
             },
             Model = OpenAI.ObjectModels.Models.Gpt_4_turbo_preview,
             MaxTokens = 4000
-        });
+        }, cancellationToken: cancellationToken);
         if (completionResult.Successful)
         {
             var result = completionResult.Choices.First().Message.Content;
@@ -273,7 +273,7 @@ RESTART:
             },
             Model = OpenAI.ObjectModels.Models.Gpt_4_turbo_preview,
             MaxTokens = 4000
-        });
+        }, cancellationToken: cancellationToken);
         if (completionResult.Successful)
         {
             var result = completionResult.Choices.First().Message.Content;
@@ -368,7 +368,7 @@ RESTART:
             },
             Model = OpenAI.ObjectModels.Models.Gpt_4_turbo_preview,
             MaxTokens = 4000
-        });
+        }, cancellationToken: cancellationToken);
         if (completionResult.Successful)
         {
             var result = completionResult.Choices.First().Message.Content;

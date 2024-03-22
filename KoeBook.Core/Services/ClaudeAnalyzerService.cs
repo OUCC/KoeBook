@@ -1,4 +1,5 @@
-﻿using KoeBook.Core.Contracts.Services;
+﻿using System.Text;
+using KoeBook.Core.Contracts.Services;
 using KoeBook.Core.Models;
 
 namespace KoeBook.Core.Services;
@@ -21,10 +22,11 @@ public partial class ClaudeAnalyzerService(IClaudeService claudeService, IDispla
             {
                 Model = "claude-3-opus-20240229", // you can use Claudia.Models.Claude3Opus string constant
                 MaxTokens = 4000,
-                Messages = [new() {
-                        Role = "user",
-                        Content = CreatePrompt1(lineNumberingText)
-                    }]
+                Messages = [new()
+                {
+                    Role = "user",
+                    Content = CreatePrompt1(lineNumberingText)
+                }]
             },
                 cancellationToken: cancellationToken
             );
@@ -34,15 +36,18 @@ public partial class ClaudeAnalyzerService(IClaudeService claudeService, IDispla
             {
                 Model = "claude-3-opus-20240229", // you can use Claudia.Models.Claude3Opus string constant
                 MaxTokens = 4000,
-                Messages = [new() {
-                        Role = "user",
-                        Content = CreatePrompt2(voiceList)
-                    }]
+                Messages = [new()
+                {
+                    Role = "user",
+                    Content = CreatePrompt2(characterList, voiceIds)
+                }]
             },
                 cancellationToken: cancellationToken
             );
 
             var characterVoiceMapping = ExtractCharacterVoiceMapping(message2.ToString());
+
+            return new(bookProperties, new(characterVoiceMapping)) { ScriptLines = scriptLines };
         }
         catch (OperationCanceledException)
         {
@@ -54,7 +59,12 @@ public partial class ClaudeAnalyzerService(IClaudeService claudeService, IDispla
         }
     }
 
-    private string CreatePrompt1(string lineNumberingText)
+    private Dictionary<string, string> ExtractCharacterVoiceMapping(string response)
+    {
+        throw new NotImplementedException();
+    }
+
+    private static string CreatePrompt1(string lineNumberingText)
     {
         return $$"""
                 {{lineNumberingText}}
@@ -91,13 +101,12 @@ public partial class ClaudeAnalyzerService(IClaudeService claudeService, IDispla
                 """;
     }
 
-    private string CreatePrompt2(List<ScriptLine> scriptLines, List<Character> characterList, List<string> voiceIds)
+    private static string CreatePrompt2(List<Character> characterList, List<string> voiceIds)
     {
-        return $$"""
-                
+        throw new NotImplementedException();
     }
 
-    private string LineNumbering(List<ScriptLine> scriptLines)
+    private static string LineNumbering(List<ScriptLine> scriptLines)
     {
         var sb = new StringBuilder();
         foreach (var (index, scriptLine) in scriptLines.Select((x, i) => (i, x)))
@@ -107,7 +116,7 @@ public partial class ClaudeAnalyzerService(IClaudeService claudeService, IDispla
         return sb.ToString();
     }
 
-    (List<Character>, List<string>) ExtractCharacterListAndVoiceIds(string response)
+    private static (List<Character>, List<string>) ExtractCharacterListAndVoiceIds(string response)
     {
         var characterList = new List<Character>();
         var voiceIds = new List<string>();

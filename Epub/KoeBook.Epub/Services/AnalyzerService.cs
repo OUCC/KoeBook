@@ -12,10 +12,10 @@ public partial class AnalyzerService(IScraperSelectorService scrapingService, IE
     private readonly IScraperSelectorService _scrapingService = scrapingService;
     private readonly IEpubDocumentStoreService _epubDocumentStoreService = epubDocumentStoreService;
     private readonly ILlmAnalyzerService _llmAnalyzerService = llmAnalyzerService;
-    private Dictionary<string, string> _rubyReplacements = new Dictionary<string, string>();
 
     public async ValueTask<BookScripts> AnalyzeAsync(BookProperties bookProperties, string tempDirectory, string coverFilePath, CancellationToken cancellationToken)
     {
+        var _rubyReplacements = new Dictionary<string, string>();
         coverFilePath = Path.Combine(tempDirectory, "Cover.png");
         using var fs = File.Create(coverFilePath);
         await fs.WriteAsync(CoverFile.ToArray(), cancellationToken);
@@ -42,8 +42,8 @@ public partial class AnalyzerService(IScraperSelectorService scrapingService, IE
                 {
                     if (element is Paragraph paragraph)
                     {
-                        var line = paragraph.Text;
-                        // rubyタグがあればルビのdictionaryに登録
+                        var line = paragraph.Text ?? "";
+                        // rubyタグがあればルビの dictionary に登録
                         var rubyDict = ExtractRuby(line);
 
                         foreach (var ruby in rubyDict)
@@ -65,7 +65,7 @@ public partial class AnalyzerService(IScraperSelectorService scrapingService, IE
         }
 
         // LLMによる話者、スタイル解析
-        var bookScripts = await _llmAnalyzerService.LlmAnalyzeScriptLinesAsync(bookProperties, scriptLines, chunks, cancellationToken);
+        var bookScripts = await _llmAnalyzerService.LlmAnalyzeScriptLinesAsync(bookProperties, scriptLines, cancellationToken)!;
 
         return bookScripts;
     }
