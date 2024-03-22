@@ -1,25 +1,46 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Text;
+using KoeBook.Core.Utility;
 
 namespace KoeBook.Core.Utility
 {
     public class StringStorer
     {
         private StringBuilder _stringBuilder = new();
+        private List<string> _texts = new List<string>();
 
         public void Store(string text)
         {
             _stringBuilder.Append(text);
         }
 
-        public string Release()
+        public void Store(IEnumerable<string> texts)
         {
-            var result = _stringBuilder.ToString();
+            var (first, rest) = texts.FirstWithRest();
+            _stringBuilder.Append(first);
+            _texts.Add(_stringBuilder.ToString());
+            foreach (var (value, isLast) in rest.WithLastFlag())
+            {
+                if (isLast)
+                {
+                    _stringBuilder.Length = 0;
+                    _stringBuilder.Append(value);
+                }
+                else
+                {
+                    _texts.Add(value);
+                }
+            }
+        }
+
+        public IEnumerable<string> Release()
+        {
+            foreach (var text in _texts)
+            {
+                yield return text;
+            }
+            yield return _stringBuilder.ToString();
             _stringBuilder.Clear();
-            return result;
+            _texts.Clear();
         }
     }
 }

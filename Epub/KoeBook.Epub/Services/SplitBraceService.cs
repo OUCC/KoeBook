@@ -1,5 +1,4 @@
-﻿using System.Text;
-using KoeBook.Epub.Contracts.Services;
+﻿using KoeBook.Epub.Contracts.Services;
 
 namespace KoeBook.Epub.Services;
 
@@ -46,6 +45,18 @@ public class SplitBraceService : ISplitBraceService
         if (startIdx != text.Length)
         {
             yield return text[startIdx..];
+        }
+    }
+
+    public IEnumerable<string> SplitBrace(IEnumerable<string> texts)
+    {
+        foreach (var text in texts)
+        {
+            var results = SplitBrace(text);
+            foreach (var result in results)
+            {
+                yield return result;
+            }
         }
     }
 }
