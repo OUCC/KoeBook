@@ -13,8 +13,20 @@ public partial class ChatGptAnalyzerService(IOpenAIService openAIService, IDispl
     private readonly IOpenAIService _openAiService = openAIService;
     private readonly IDisplayStateChangeService _displayStateChangeService = displayStateChangeService;
 
-    public async ValueTask<BookScripts> LlmAnalyzeScriptLinesAsync(BookProperties bookProperties, List<ScriptLine> scriptLines, List<string> chunks, CancellationToken cancellationToken)
+    public async ValueTask<BookScripts> LlmAnalyzeScriptLinesAsync(BookProperties bookProperties, List<ScriptLine> scriptLines, CancellationToken cancellationToken)
     {
+        var chunks = new List<string>();
+        var chunk = new StringBuilder();
+        foreach (var line in scriptLines)
+        {
+            if (chunk.Length + line.Text.Length > 800)
+            {
+                chunks.Add(chunk.ToString());
+                chunk.Clear();
+            }
+            chunk.AppendLine(line.Text);
+        }
+        if (chunk.Length > 0) chunks.Add(chunk.ToString());
         var progress = _displayStateChangeService.ResetProgress(bookProperties, GenerationState.Analyzing, chunks.Count);
         Queue<string> summaryList = new();
         Queue<string> characterList = new();

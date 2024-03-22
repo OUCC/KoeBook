@@ -1,5 +1,4 @@
-﻿using System.Text;
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 using KoeBook.Core;
 using KoeBook.Core.Contracts.Services;
 using KoeBook.Core.Models;
@@ -65,21 +64,7 @@ public partial class AnalyzerService(IScraperSelectorService scrapingService, IE
             }
         }
 
-        // 800文字以上になったら１チャンクに分ける
-        var chunks = new List<string>();
-        var chunk = new StringBuilder();
-        foreach (var line in scriptLines)
-        {
-            if (chunk.Length + line.Text.Length > 800)
-            {
-                chunks.Add(chunk.ToString());
-                chunk.Clear();
-            }
-            chunk.AppendLine(line.Text);
-        }
-        if (chunk.Length > 0) chunks.Add(chunk.ToString());
-
-        // GPT4による話者、スタイル解析
+        // LLMによる話者、スタイル解析
         var bookScripts = await _llmAnalyzerService.LlmAnalyzeScriptLinesAsync(bookProperties, scriptLines, chunks, cancellationToken);
 
         return bookScripts;
