@@ -25,7 +25,7 @@ AIを用いて話者を特定して適切な音声を生成するので場面に
 
 ## 操作説明
 
-https://github.com/kc3hack/2024_H/assets/130837816/5c99b093-9069-4e37-baad-d554c54bd982
+https://github.com/kc3hack/2024_H/assets/84168445/2c265fee-792e-4089-93cb-8ddfa401cb0d
 
 （注）動画はイメージです。  
 
