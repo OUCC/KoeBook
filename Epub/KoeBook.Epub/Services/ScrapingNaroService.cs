@@ -6,16 +6,17 @@ using AngleSharp;
 using AngleSharp.Dom;
 using AngleSharp.Html.Dom;
 using KoeBook.Core;
+using KoeBook.Core.Utilities;
 using KoeBook.Epub.Contracts.Services;
 using KoeBook.Epub.Models;
-using KoeBook.Epub.Utility;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace KoeBook.Epub.Services
 {
-    public partial class ScrapingNaroService(IHttpClientFactory httpClientFactory, [FromKeyedServices(nameof(ScrapingNaroService))] IScrapingClientService scrapingClientService) : IScrapingService
+    public partial class ScrapingNaroService(IHttpClientFactory httpClientFactory, ISplitBraceService splitBraceService, [FromKeyedServices(nameof(ScrapingNaroService))] IScrapingClientService scrapingClientService) : IScrapingService
     {
         private readonly IHttpClientFactory _httpCliantFactory = httpClientFactory;
+        private readonly ISplitBraceService _splitBraceService = splitBraceService;
         private readonly IScrapingClientService _scrapingClientService = scrapingClientService;
         private const string BaseUrl = "https://ncode.syosetu.com";
 
@@ -93,6 +94,8 @@ namespace KoeBook.Epub.Services
 
         private async Task<(string? title, Section section)> ReadPageAsync(string ncode, int episodeNum, bool isRensai, string imageDirectory, CancellationToken ct)
         {
+            var lineBuilder = new SplittedLineBuilder();
+
             var config = Configuration.Default.WithDefaultLoader();
             using var context = BrowsingContext.New(config);
             IDocument doc;
@@ -135,7 +138,9 @@ namespace KoeBook.Epub.Services
                 if (item.ChildElementCount == 0)
                 {
                     if (!string.IsNullOrWhiteSpace(item.InnerHtml))
-                        section.Elements.AddRange(ScrapingHelper.SplitBrace(item.InnerHtml).Select(line => new Paragraph() { Text = line }));
+                    {
+                        lineBuilder.Append(item.InnerHtml);
+                    }
                 }
                 else if (item.ChildElementCount == 1)
                 {
@@ -159,9 +164,18 @@ namespace KoeBook.Epub.Services
                     else if (item.Children[0].TagName == "RUBY")
                     {
                         if (!string.IsNullOrWhiteSpace(item.InnerHtml))
-                            section.Elements.AddRange(ScrapingHelper.SplitBrace(item.InnerHtml).Select(line => new Paragraph() { Text = line }));
+                        {
+                            lineBuilder.Append(item.InnerHtml);
+                        }
                     }
-                    else if (item.Children[0] is not IHtmlBreakRowElement)
+                    else if (item.Children[0] is IHtmlBreakRowElement)
+                    {
+                        foreach (var split in _splitBraceService.SplitBrace(lineBuilder.ToLinesAndClear()))
+                        {
+                            section.Elements.Add(new Paragraph() { Text = split });
+                        }
+                    }
+                    else
                         throw new EbookException(ExceptionType.UnexpectedStructure);
                 }
                 else
@@ -170,7 +184,13 @@ namespace KoeBook.Epub.Services
                         throw new EbookException(ExceptionType.UnexpectedStructure);
 
                     if (!string.IsNullOrWhiteSpace(item.InnerHtml))
-                        section.Elements.AddRange(ScrapingHelper.SplitBrace(item.InnerHtml).Select(line => new Paragraph() { Text = line }));
+                    {
+                        lineBuilder.Append(item.InnerHtml);
+                    }
+                }
+                foreach (var split in _splitBraceService.SplitBrace(lineBuilder.ToLinesAndClear()))
+                {
+                    section.Elements.Add(new Paragraph() { Text = split });
                 }
             }
             return (chapterTitle, section);
@@ -219,12 +239,12 @@ namespace KoeBook.Epub.Services
 
             return uri.Segments switch
             {
-                // https://ncode.syosetu.com/n0000a/ のとき
-                ["/", var ncode] when IsAscii(ncode) => ncode.TrimEnd('/'),
-                // https://ncode.syosetu.com/n0000a/12 のとき
-                ["/", var ncode, var num] when IsAscii(ncode) && num.TrimEnd('/').All(char.IsAsciiDigit) => ncode.TrimEnd('/'),
-                // https://ncode.syosetu.com/novelview/infotop/ncode/n0000a/ のとき
-                ["/", "novelview/", "infotop/", "ncode/", var ncode] when IsAscii(ncode) => ncode.TrimEnd('/'),
+            // https://ncode.syosetu.com/n0000a/ のとき
+            ["/", var ncode] when IsAscii(ncode) => ncode.TrimEnd('/'),
+            // https://ncode.syosetu.com/n0000a/12 のとき
+            ["/", var ncode, var num] when IsAscii(ncode) && num.TrimEnd('/').All(char.IsAsciiDigit) => ncode.TrimEnd('/'),
+            // https://ncode.syosetu.com/novelview/infotop/ncode/n0000a/ のとき
+            ["/", "novelview/", "infotop/", "ncode/", var ncode] when IsAscii(ncode) => ncode.TrimEnd('/'),
                 _ => throw new EbookException(ExceptionType.InvalidUrl),
             };
 

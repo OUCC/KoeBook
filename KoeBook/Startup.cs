@@ -44,6 +44,7 @@ internal static class Startup
                 .AddSingleton<IScrapingService, ScrapingAozoraService>()
                 .AddSingleton<IScrapingService, ScrapingNaroService>();
             services.AddSingleton<IEpubCreateService, EpubCreateService>();
+            services.AddSingleton<ISplitBraceService, SplitBraceService>();
             services.AddSingleton<IFileExtensionService, FileExtensionService>();
         });
 

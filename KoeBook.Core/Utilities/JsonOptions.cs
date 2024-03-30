@@ -1,8 +1,8 @@
 ﻿using System.Text.Json;
 
-namespace KoeBook.Epub.Utility;
+namespace KoeBook.Core.Utilities;
 
-internal static class JsonOptions
+public static class JsonOptions
 {
     public static JsonSerializerOptions Default => JsonSerializerOptions.Default;
 
