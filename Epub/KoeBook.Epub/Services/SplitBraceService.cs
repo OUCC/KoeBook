@@ -48,15 +48,11 @@ public class SplitBraceService : ISplitBraceService
         }
     }
 
+    /// <summary>
+    /// 複数の文字列を分割して平坦化します。
+    /// </summary>
     public IEnumerable<string> SplitBrace(IEnumerable<string> texts)
     {
-        foreach (var text in texts)
-        {
-            var results = SplitBrace(text);
-            foreach (var result in results)
-            {
-                yield return result;
-            }
-        }
+        return texts.SelectMany(SplitBrace);
     }
 }

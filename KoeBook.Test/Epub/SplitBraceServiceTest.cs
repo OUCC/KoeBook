@@ -2,7 +2,7 @@
 
 namespace KoeBook.Test.Epub;
 
-public class ScrapingHelperTest
+public class SplitBraceServiceTest
 {
     public static object[][] TestCases()
     {
@@ -83,7 +83,7 @@ public class ScrapingHelperTest
     [MemberData(nameof(TestCases))]
     public void SplitBraceTest(string text, List<string> expected)
     {
-        var helper = new SplitBraceService();
-        Assert.Equal(expected, helper.SplitBrace(text));
+        var service = new SplitBraceService();
+        Assert.Equal(expected, service.SplitBrace(text));
     }
 }
