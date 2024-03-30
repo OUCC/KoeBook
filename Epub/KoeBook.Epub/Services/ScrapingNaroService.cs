@@ -4,16 +4,17 @@ using AngleSharp.Dom;
 using AngleSharp.Html.Dom;
 using AngleSharp.Io;
 using KoeBook.Core;
+using KoeBook.Core.Utilities;
 using KoeBook.Epub.Contracts.Services;
 using KoeBook.Epub.Models;
 using Microsoft.Extensions.DependencyInjection;
-using static KoeBook.Epub.Utility.ScrapingHelper;
 
 namespace KoeBook.Epub.Services
 {
-    public partial class ScrapingNaroService(IHttpClientFactory httpClientFactory, [FromKeyedServices(nameof(ScrapingNaroService))] IScrapingClientService scrapingClientService) : IScrapingService
+    public partial class ScrapingNaroService(IHttpClientFactory httpClientFactory, ISplitBraceService splitBraceService, [FromKeyedServices(nameof(ScrapingNaroService))] IScrapingClientService scrapingClientService) : IScrapingService
     {
         private readonly IHttpClientFactory _httpCliantFactory = httpClientFactory;
+        private readonly ISplitBraceService _splitBraceService = splitBraceService;
         private readonly IScrapingClientService _scrapingClientService = scrapingClientService;
 
         public bool IsMatchSite(Uri uri)
@@ -135,8 +136,10 @@ namespace KoeBook.Epub.Services
 
         private record SectionWithChapterTitle(string? title, Section section);
 
-        private static async Task<SectionWithChapterTitle> ReadPageAsync(string url, bool isRensai, string imageDirectory, CancellationToken ct)
+        private async ValueTask<SectionWithChapterTitle> ReadPageAsync(string url, bool isRensai, string imageDirectory, CancellationToken ct)
         {
+            var lineBuilder = new SplittedLineBuilder();
+
             var config = Configuration.Default.WithDefaultLoader();
             using var context = BrowsingContext.New(config);
             var doc = await context.OpenAsync(url, ct).ConfigureAwait(false);
@@ -171,7 +174,6 @@ namespace KoeBook.Epub.Services
 
             var section = new Section(sectionTitleElement.InnerHtml);
 
-
             var main_text = doc.QuerySelector("#novel_honbun")
                 ?? throw new EbookException(ExceptionType.WebScrapingFailed, "本文がありません");
 
@@ -184,10 +186,7 @@ namespace KoeBook.Epub.Services
                 {
                     if (!string.IsNullOrWhiteSpace(item.InnerHtml))
                     {
-                        foreach (var split in SplitBrace(item.InnerHtml))
-                        {
-                            section.Elements.Add(new Paragraph() { Text = split });
-                        }
+                        lineBuilder.Append(item.InnerHtml);
                     }
                 }
                 else if (item.ChildElementCount == 1)
@@ -221,13 +220,17 @@ namespace KoeBook.Epub.Services
                     {
                         if (!string.IsNullOrWhiteSpace(item.InnerHtml))
                         {
-                            foreach (var split in SplitBrace(item.InnerHtml))
-                            {
-                                section.Elements.Add(new Paragraph() { Text = split });
-                            }
+                            lineBuilder.Append(item.InnerHtml);
                         }
                     }
-                    else if (item.Children[0] is not IHtmlBreakRowElement)
+                    else if (item.Children[0] is IHtmlBreakRowElement)
+                    {
+                        foreach (var split in _splitBraceService.SplitBrace(lineBuilder.ToLinesAndClear()))
+                        {
+                            section.Elements.Add(new Paragraph() { Text = split });
+                        }
+                    }
+                    else
                         throw new EbookException(ExceptionType.UnexpectedStructure);
                 }
                 else
@@ -247,15 +250,17 @@ namespace KoeBook.Epub.Services
 
                     if (!string.IsNullOrWhiteSpace(item.InnerHtml))
                     {
-                        foreach (var split in SplitBrace(item.InnerHtml))
-                        {
-                            section.Elements.Add(new Paragraph() { Text = split });
-                        }
+                        lineBuilder.Append(item.InnerHtml);
                     }
+                }
+                foreach (var split in _splitBraceService.SplitBrace(lineBuilder.ToLinesAndClear()))
+                {
+                    section.Elements.Add(new Paragraph() { Text = split });
                 }
             }
             return new SectionWithChapterTitle(chapterTitle, section);
         }
+
 
         [System.Text.RegularExpressions.GeneratedRegex(@"https://.{5,7}.syosetu.com/(.{7}).?")]
         private static partial System.Text.RegularExpressions.Regex UrlToNcode();

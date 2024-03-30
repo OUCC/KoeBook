@@ -6,14 +6,15 @@ using KoeBook.Core;
 using KoeBook.Epub.Contracts.Services;
 using KoeBook.Epub.Models;
 using Microsoft.Extensions.DependencyInjection;
-using static KoeBook.Epub.Utility.ScrapingHelper;
 
 
 namespace KoeBook.Epub.Services
 {
-    public partial class ScrapingAozoraService([FromKeyedServices(nameof(ScrapingAozoraService))] IScrapingClientService scrapingClientService) : IScrapingService
+    public partial class ScrapingAozoraService(ISplitBraceService splitBraceService, [FromKeyedServices(nameof(ScrapingAozoraService))] IScrapingClientService scrapingClientService) : IScrapingService
     {
+        private readonly ISplitBraceService _splitBraceService = splitBraceService;
         private readonly IScrapingClientService _scrapingClientService = scrapingClientService;
+
 
         public bool IsMatchSite(Uri uri)
         {
@@ -175,7 +176,7 @@ namespace KoeBook.Epub.Services
                                 paragraph.Text += TextProcess(midashi);
                                 document.Chapters[chapterNum].Sections[sectionNum].Elements.Add(new Paragraph());
 
-                                foreach (var splitText in SplitBrace(TextProcess(midashi)))
+                                foreach (var splitText in _splitBraceService.SplitBrace(TextProcess(midashi)))
                                 {
                                     if (document.Chapters[chapterNum].Sections[sectionNum].Elements[^1] is Paragraph paragraph1)
                                     {
@@ -192,20 +193,21 @@ namespace KoeBook.Epub.Services
                         {
                             // https://www.aozora.gr.jp/annotation/graphics.html#:~:text=%3Cdiv%20class%3D%22caption%22%3E を処理するための部分
                             document.EnsureParagraph(chapterNum, sectionNum);
-                            if ((document.Chapters[chapterNum].Sections[sectionNum].Elements[^1] is Paragraph paragraph))
+                            var focusElements = document.Chapters[chapterNum].Sections[sectionNum].Elements;
+                            if (focusElements[^1] is Paragraph paragraph)
                             {
-                                var split = SplitBrace(TextProcess(element));
-                                for (int i = 0; i < split.Count - 1; i++)
+                                var splitted = _splitBraceService.SplitBrace(TextProcess(element));
+                                var first = true;
+
+                                foreach (var text in splitted)
                                 {
-                                    if (document.Chapters[chapterNum].Sections[sectionNum].Elements[^1] is Paragraph paragraph1)
+                                    if (first)
                                     {
-                                        paragraph1.Text += split[i];
+                                        paragraph.Text += text;
+                                        first = false;
                                     }
-                                    document.Chapters[chapterNum].Sections[sectionNum].Elements.Add(new Paragraph());
-                                }
-                                if (document.Chapters[chapterNum].Sections[sectionNum].Elements[^1] is Paragraph paragraph2)
-                                {
-                                    paragraph2.Text += split[^1];
+                                    else
+                                        focusElements.Add(new Paragraph() { Text = text });
                                 }
                             }
                         }
@@ -232,7 +234,7 @@ namespace KoeBook.Epub.Services
                             document.EnsureParagraph(chapterNum, sectionNum);
                             if ((document.Chapters[chapterNum].Sections[sectionNum].Elements[^1] is Paragraph paragraph))
                             {
-                                foreach (var splitText in SplitBrace(TextProcess(element)))
+                                foreach (var splitText in _splitBraceService.SplitBrace(TextProcess(element)))
                                 {
                                     if (document.Chapters[chapterNum].Sections[sectionNum].Elements[^1] is Paragraph paragraph1)
                                     {
@@ -343,7 +345,7 @@ namespace KoeBook.Epub.Services
                                 document.EnsureParagraph(chapterNum, sectionNum);
                                 if ((document.Chapters[chapterNum].Sections[sectionNum].Elements[^1] is Paragraph paragraph))
                                 {
-                                    foreach (var splitText in SplitBrace(TextProcess(element)))
+                                    foreach (var splitText in _splitBraceService.SplitBrace(TextProcess(element)))
                                     {
                                         if (document.Chapters[chapterNum].Sections[sectionNum].Elements[^1] is Paragraph paragraph1)
                                         {
@@ -375,21 +377,22 @@ namespace KoeBook.Epub.Services
                             }
                             sectionNum++;
                         }
+
                         document.EnsureParagraph(chapterNum, sectionNum);
-                        if ((document.Chapters[chapterNum].Sections[sectionNum].Elements[^1] is Paragraph paragraph))
+                        var focusElements = document.Chapters[chapterNum].Sections[sectionNum].Elements;
+                        if (focusElements[^1] is Paragraph paragraph)
                         {
-                            var split = SplitBrace(TextProcess(element));
-                            for (int i = 0; i < split.Count - 1; i++)
+                            var splitted = _splitBraceService.SplitBrace(TextProcess(element));
+                            var first = true;
+                            foreach (var text in splitted)
                             {
-                                if (document.Chapters[chapterNum].Sections[sectionNum].Elements[^1] is Paragraph paragraph1)
+                                if (first)
                                 {
-                                    paragraph1.Text += split[i];
+                                    paragraph.Text += text;
+                                    first = false;
                                 }
-                                document.Chapters[chapterNum].Sections[sectionNum].Elements.Add(new Paragraph());
-                            }
-                            if (document.Chapters[chapterNum].Sections[sectionNum].Elements[^1] is Paragraph paragraph2)
-                            {
-                                paragraph2.Text += split[^1];
+                                else
+                                    focusElements.Add(new Paragraph { Text = text });
                             }
                         }
                         // 想定していない構造が見つかったことをログに出力した方が良い？
@@ -416,22 +419,20 @@ namespace KoeBook.Epub.Services
                         sectionNum++;
                     }
                     document.EnsureParagraph(chapterNum, sectionNum);
-                    if ((document.Chapters[chapterNum].Sections[sectionNum].Elements[^1] is Paragraph paragraph))
+                    var focusElements = document.Chapters[chapterNum].Sections[sectionNum].Elements;
+                    if (focusElements[^1] is Paragraph paragraph)
                     {
-                        paragraph.Text += TextProcess(element);
-
-                        var split = SplitBrace(TextProcess(element));
-                        for (int i = 0; i < split.Count - 1; i++)
+                        var splitted = _splitBraceService.SplitBrace(TextProcess(element));
+                        var first = true;
+                        foreach (var text in splitted)
                         {
-                            if (document.Chapters[chapterNum].Sections[sectionNum].Elements[^1] is Paragraph paragraph1)
+                            if (first)
                             {
-                                paragraph1.Text += split[i];
+                                paragraph.Text += text;
+                                first = false;
                             }
-                            document.Chapters[chapterNum].Sections[sectionNum].Elements.Add(new Paragraph());
-                        }
-                        if (document.Chapters[chapterNum].Sections[sectionNum].Elements[^1] is Paragraph paragraph2)
-                        {
-                            paragraph2.Text += split[^1];
+                            else
+                                focusElements.Add(new Paragraph { Text = text });
                         }
                     }
                     // 想定していない構造が見つかったことをログに出力した方が良い？
@@ -464,20 +465,20 @@ namespace KoeBook.Epub.Services
                                 sectionNum++;
                             }
                             document.EnsureParagraph(chapterNum, sectionNum);
-                            if ((document.Chapters[chapterNum].Sections[sectionNum].Elements[^1] is Paragraph paragraph))
+                            var focusElements = document.Chapters[chapterNum].Sections[sectionNum].Elements;
+                            if (focusElements[^1] is Paragraph paragraph)
                             {
-                                var split = SplitBrace(TextReplace(nextNode.Text()));
-                                for (int i = 0; i < split.Count - 1; i++)
+                                var splitted = _splitBraceService.SplitBrace(TextReplace(nextNode.Text()));
+                                var first = true;
+                                foreach (var text in splitted)
                                 {
-                                    if (document.Chapters[chapterNum].Sections[sectionNum].Elements[^1] is Paragraph paragraph1)
+                                    if (first)
                                     {
-                                        paragraph1.Text += split[i];
+                                        paragraph.Text += text;
+                                        first = false;
                                     }
-                                    document.Chapters[chapterNum].Sections[sectionNum].Elements.Add(new Paragraph());
-                                }
-                                if (document.Chapters[chapterNum].Sections[sectionNum].Elements[^1] is Paragraph paragraph2)
-                                {
-                                    paragraph2.Text += split[^1];
+                                    else
+                                        focusElements.Add(new Paragraph { Text = text });
                                 }
                             }
                         }
