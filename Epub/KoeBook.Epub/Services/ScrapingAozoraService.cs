@@ -422,8 +422,6 @@ namespace KoeBook.Epub.Services
                     var focusElements = document.Chapters[chapterNum].Sections[sectionNum].Elements;
                     if (focusElements[^1] is Paragraph paragraph)
                     {
-                        paragraph.Text += TextProcess(element);
-
                         var splitted = _splitBraceService.SplitBrace(TextProcess(element));
                         var first = true;
                         foreach (var text in splitted)
