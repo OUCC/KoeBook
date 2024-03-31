@@ -210,12 +210,12 @@ namespace KoeBook.Epub.Services
 
             return uri.Segments switch
             {
-            // https://ncode.syosetu.com/n0000a/ のとき
-            ["/", var ncode] when IsAscii(ncode) => ncode.TrimEnd('/'),
-            // https://ncode.syosetu.com/n0000a/12 のとき
-            ["/", var ncode, var num] when IsAscii(ncode) && num.TrimEnd('/').All(char.IsAsciiDigit) => ncode.TrimEnd('/'),
-            // https://ncode.syosetu.com/novelview/infotop/ncode/n0000a/ のとき
-            ["/", "novelview/", "infotop/", "ncode/", var ncode] when IsAscii(ncode) => ncode.TrimEnd('/'),
+                // https://ncode.syosetu.com/n0000a/ のとき
+                ["/", var ncode] when IsAscii(ncode) => ncode.TrimEnd('/'),
+                // https://ncode.syosetu.com/n0000a/12 のとき
+                ["/", var ncode, var num] when IsAscii(ncode) && num.TrimEnd('/').All(char.IsAsciiDigit) => ncode.TrimEnd('/'),
+                // https://ncode.syosetu.com/novelview/infotop/ncode/n0000a/ のとき
+                ["/", "novelview/", "infotop/", "ncode/", var ncode] when IsAscii(ncode) => ncode.TrimEnd('/'),
                 _ => throw new EbookException(ExceptionType.InvalidUrl),
             };
 
