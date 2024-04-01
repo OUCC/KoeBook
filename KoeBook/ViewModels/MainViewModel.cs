@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using KoeBook.Contracts.Services;
 using KoeBook.Core.Contracts.Services;
 using KoeBook.Core.Models;
+using KoeBook.Epub.Contracts.Services;
 using KoeBook.Services;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -16,6 +17,7 @@ public sealed partial class MainViewModel : ObservableRecipient
     private readonly IGenerationTaskService _taskService;
     private readonly IDialogService _dialogService;
     private readonly ILocalSettingsService _localSettingsService;
+    private readonly IScraperSelectorService _scraperSelectorService;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(EbookFileName))]
@@ -42,11 +44,12 @@ public sealed partial class MainViewModel : ObservableRecipient
 
     const string SkipEditSettingsKey = "SkipEdit";
 
-    public MainViewModel(IGenerationTaskService taskService, IDialogService dialogService, ILocalSettingsService localSettingsService, GenerationTaskRunnerService _)
+    public MainViewModel(IGenerationTaskService taskService, IDialogService dialogService, ILocalSettingsService localSettingsService, IScraperSelectorService scraperSelectorService, GenerationTaskRunnerService _)
     {
         _taskService = taskService;
         _dialogService = dialogService;
         _localSettingsService = localSettingsService;
+        _scraperSelectorService = scraperSelectorService;
 
         InitializeAsync(); // 必ず最後に実行すること
     }
@@ -146,26 +149,6 @@ public sealed partial class MainViewModel : ObservableRecipient
 
     partial void OnEbookUrlChanged(string? value)
     {
-        EbookIsValid = IsValid(value);
-
-        static bool IsValid(string? value)
-        {
-            if (string.IsNullOrEmpty(value))
-                return true;
-            ReadOnlySpan<string> allowedOrigins = [
-                "https://www.aozora.gr.jp",
-                "https://syosetu.com",
-            ];
-
-            try
-            {
-                var uri = new Uri(value);
-                return allowedOrigins.Contains(uri.GetLeftPart(UriPartial.Authority));
-            }
-            catch (UriFormatException)
-            {
-                return false;
-            }
-        }
+        EbookIsValid = string.IsNullOrEmpty(value) || _scraperSelectorService.IsMatchSites(value);
     }
 }
