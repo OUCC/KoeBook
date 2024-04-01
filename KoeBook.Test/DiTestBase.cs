@@ -6,7 +6,7 @@ namespace KoeBook.Test;
 
 public class DiTestBase
 {
-    protected IHost Host { get; } = CreateDefaultBuilder().Build();
+    protected IHost Host { get; init; } = CreateDefaultBuilder().Build();
 
     protected T GetService<T>() where T : notnull
     {
