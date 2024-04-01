@@ -102,8 +102,8 @@ namespace KoeBook.Epub.Services
             var lineBuilder = new SplittedLineBuilder();
 
             var chapterTitle = isSerial
-                ? null
-                : doc.QuerySelector(".chapter_title")?.InnerHtml;
+                ? doc.QuerySelector(".chapter_title")?.InnerHtml
+                : null;
 
             var sectionTitleElement = (isSerial
                 ? doc.QuerySelector(".novel_subtitle")
@@ -134,11 +134,9 @@ namespace KoeBook.Epub.Services
                         case { TagName: TagNames.Anchor, Children: [IHtmlImageElement img] } when img.Source is not null:
                             {
                                 // 画像のダウンロード
-                                var filePass = Path.Combine(imageDirectory, new Uri(img.Source, Options.RawUri).Segments[^1].TrimEnd('/'));
-                                using var fileSr = new FileStream(filePass, FileMode.Create, FileAccess.ReadWrite, FileShare.None, 4096, true);
-                                await _scrapingClientService.GetAsStreamAsync(img.Source, fileSr, ct).ConfigureAwait(false);
-                                fileSr.Flush();
-                                section.Elements.Add(new Picture(filePass));
+                                var filePath = Path.Combine(imageDirectory, new Uri(img.Source, Options.RawUri).Segments[^1].TrimEnd('/'));
+                                await _scrapingClientService.DownloadToFileAsync(img.Source, filePath, ct).ConfigureAwait(false);
+                                section.Elements.Add(new Picture(filePath));
                                 break;
                             }
                         case { TagName: TagNames.Ruby }:

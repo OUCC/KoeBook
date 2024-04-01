@@ -69,6 +69,35 @@ public sealed class ScrapingClientService : IScrapingClientService, IDisposable
         return taskCompletion.Task;
     }
 
+    public Task DownloadToFileAsync(string url, string destPath, CancellationToken ct)
+    {
+        var taskCompletion = new TaskCompletionSource();
+
+        lock (_actionQueue)
+            _actionQueue.Enqueue(async httpClient =>
+            {
+                if (ct.IsCancellationRequested)
+                    taskCompletion.SetCanceled(ct);
+
+                try
+                {
+                    using var fileStream = new FileStream(destPath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, useAsync: true);
+                    var response = await httpClient.GetAsync(url, ct).ConfigureAwait(false);
+                    await response.Content.CopyToAsync(fileStream, ct).ConfigureAwait(false);
+                    await fileStream.FlushAsync(ct).ConfigureAwait(false);
+                    taskCompletion.SetResult();
+                }
+                catch (Exception ex)
+                {
+                    taskCompletion.SetException(ex);
+                }
+            });
+
+        EnsureWorkerActivated();
+
+        return taskCompletion.Task;
+    }
+
     /// <summary>
     /// <see cref="Worker"/>が起動していない場合は起動します
     /// </summary>
