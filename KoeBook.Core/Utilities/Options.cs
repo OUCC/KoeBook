@@ -1,7 +1,11 @@
-﻿namespace KoeBook.Core.Utilities;
+﻿using System.Text.Json;
 
-public static class UriOptions
+namespace KoeBook.Core.Utilities;
+
+public static class Options
 {
+    public static JsonSerializerOptions JsonWeb { get; } = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+
     /// <summary>
     /// 正規化を行わないでUriを作成します
     /// </summary>

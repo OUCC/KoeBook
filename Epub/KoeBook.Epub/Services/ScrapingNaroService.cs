@@ -15,7 +15,7 @@ namespace KoeBook.Epub.Services
 {
     public partial class ScrapingNaroService(IHttpClientFactory httpClientFactory, ISplitBraceService splitBraceService, [FromKeyedServices(nameof(ScrapingNaroService))] IScrapingClientService scrapingClientService) : IScrapingService
     {
-        private readonly IHttpClientFactory _httpCliantFactory = httpClientFactory;
+        private readonly IHttpClientFactory _httpClientFactory = httpClientFactory;
         private readonly ISplitBraceService _splitBraceService = splitBraceService;
         private readonly IScrapingClientService _scrapingClientService = scrapingClientService;
         private const string BaseUrl = "https://ncode.syosetu.com";
@@ -30,6 +30,7 @@ namespace KoeBook.Epub.Services
             var ncode = GetNcode(url);
             var novelInfo = await GetNovelInfoAsync(ncode, ct).ConfigureAwait(false);
 
+            Directory.CreateDirectory(imageDirectory);
             var config = Configuration.Default.WithDefaultLoader();
             using var context = BrowsingContext.New(config);
 
@@ -45,14 +46,14 @@ namespace KoeBook.Epub.Services
                 ?? throw new EbookException(ExceptionType.WebScrapingFailed, $"タイトルを取得できませんでした");
             var bookTitle = bookTitleElement.InnerHtml;
 
-            // auther の取得
-            var bookAutherElement = doc.QuerySelector(".novel_writername")
+            // author の取得
+            var bookAuthorElement = doc.QuerySelector(".novel_writername")
                 ?? throw new EbookException(ExceptionType.WebScrapingFailed, $"著者を取得できませんでした");
-            var bookAuther = bookAutherElement.QuerySelector("a") is IHtmlAnchorElement bookAutherTag
-                ? bookAutherTag.InnerHtml
-                : bookAutherElement.InnerHtml.Replace("作者：", "");
+            var bookAuthor = bookAuthorElement.QuerySelector("a") is IHtmlAnchorElement bookAuthorTag
+                ? bookAuthorTag.InnerHtml
+                : bookAuthorElement.InnerHtml.Replace("作者：", "");
 
-            var document = new EpubDocument(bookTitle, bookAuther, coverFilePath, id);
+            var document = new EpubDocument(bookTitle, bookAuthor, coverFilePath, id);
             if (novelInfo.IsSerial) // 連載の時
             {
                 async IAsyncEnumerable<(string? title, Section section)> LoadDetailsAsync(IBrowsingContext context, NovelInfo novelInfo, string imageDirectory, [EnumeratorCancellation] CancellationToken ct)
@@ -93,7 +94,7 @@ namespace KoeBook.Epub.Services
             return document;
         }
 
-        private async ValueTask<(string? title, Section section)> ReadPageAsync(IDocument doc, bool isSerial, string imageDirectory, CancellationToken ct)
+        internal async ValueTask<(string? title, Section section)> ReadPageAsync(IDocument doc, bool isSerial, string imageDirectory, CancellationToken ct)
         {
             var lineBuilder = new SplittedLineBuilder();
 
@@ -110,10 +111,10 @@ namespace KoeBook.Epub.Services
 
             var section = new Section(sectionTitle);
 
-            var main_text = doc.QuerySelector("#novel_honbun")
+            var mainText = doc.QuerySelector("#novel_honbun")
                 ?? throw new EbookException(ExceptionType.WebScrapingFailed, "本文がありません");
 
-            foreach (var item in main_text.Children)
+            foreach (var item in mainText.Children)
             {
                 if (item is not IHtmlParagraphElement)
                     throw new EbookException(ExceptionType.UnexpectedStructure);
@@ -130,9 +131,10 @@ namespace KoeBook.Epub.Services
                         case { TagName: TagNames.Anchor, Children: [IHtmlImageElement img] } when img.Source is not null:
                             {
                                 // 画像のダウンロード
-                                var filePass = Path.Combine(imageDirectory, new Uri(img.Source, UriOptions.RawUri).Segments[^1].TrimEnd('/'));
-                                using var fileSr = File.OpenWrite(filePass);
+                                var filePass = Path.Combine(imageDirectory, new Uri(img.Source, Options.RawUri).Segments[^1].TrimEnd('/'));
+                                using var fileSr = new FileStream(filePass, FileMode.Create, FileAccess.ReadWrite, FileShare.None, 4096, true);
                                 await _scrapingClientService.GetAsStreamAsync(img.Source, fileSr, ct).ConfigureAwait(false);
+                                fileSr.Flush();
                                 section.Elements.Add(new Picture(filePass));
                                 break;
                             }
@@ -173,7 +175,7 @@ namespace KoeBook.Epub.Services
             var request = new HttpRequestMessage(HttpMethod.Get, $"https://api.syosetu.com/novelapi/api/?of=ga-nt-n&out=json&ncode={ncode}");
             request.Headers.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.45 Safari/537.36");
 
-            var client = _httpCliantFactory.CreateClient();
+            var client = _httpClientFactory.CreateClient();
             var response = await client.SendAsync(request, ct).ConfigureAwait(false);
 
             if (!response.IsSuccessStatusCode)
@@ -185,14 +187,14 @@ namespace KoeBook.Epub.Services
 
             if (!await enumerator.MoveNextAsync().ConfigureAwait(false))
                 throw new EbookException(ExceptionType.NarouApiFailed);
-            var dataInfo = enumerator.Current.Deserialize<NaroResponseFirstElement>(JsonOptions.Web);
+            var dataInfo = enumerator.Current.Deserialize<NaroResponseFirstElement>(Options.JsonWeb);
             if (dataInfo is not { Allcount: 1 })
                 throw new EbookException(ExceptionType.NarouApiFailed);
 
             if (!await enumerator.MoveNextAsync().ConfigureAwait(false))
                 throw new EbookException(ExceptionType.NarouApiFailed);
 
-            var novelInfo = enumerator.Current.Deserialize<NovelInfo>(JsonOptions.Web);
+            var novelInfo = enumerator.Current.Deserialize<NovelInfo>(Options.JsonWeb);
             if (novelInfo is null || !novelInfo.Ncode.Equals(ncode, StringComparison.OrdinalIgnoreCase))
                 throw new EbookException(ExceptionType.NarouApiFailed);
 
@@ -204,18 +206,18 @@ namespace KoeBook.Epub.Services
 
         internal static string GetNcode(string url)
         {
-            var uri = new Uri(url, UriOptions.RawUri);
+            var uri = new Uri(url, Options.RawUri);
             if (uri.GetLeftPart(UriPartial.Authority) != "https://ncode.syosetu.com")
                 throw new EbookException(ExceptionType.InvalidUrl);
 
             return uri.Segments switch
             {
-                // https://ncode.syosetu.com/n0000a/ のとき
-                ["/", var ncode] when IsAscii(ncode) => ncode.TrimEnd('/'),
-                // https://ncode.syosetu.com/n0000a/12 のとき
-                ["/", var ncode, var num] when IsAscii(ncode) && num.TrimEnd('/').All(char.IsAsciiDigit) => ncode.TrimEnd('/'),
-                // https://ncode.syosetu.com/novelview/infotop/ncode/n0000a/ のとき
-                ["/", "novelview/", "infotop/", "ncode/", var ncode] when IsAscii(ncode) => ncode.TrimEnd('/'),
+            // https://ncode.syosetu.com/n0000a/ のとき
+            ["/", var ncode] when IsAscii(ncode) => ncode.TrimEnd('/'),
+            // https://ncode.syosetu.com/n0000a/12 のとき
+            ["/", var ncode, var num] when IsAscii(ncode) && num.TrimEnd('/').All(char.IsAsciiDigit) => ncode.TrimEnd('/'),
+            // https://ncode.syosetu.com/novelview/infotop/ncode/n0000a/ のとき
+            ["/", "novelview/", "infotop/", "ncode/", var ncode] when IsAscii(ncode) => ncode.TrimEnd('/'),
                 _ => throw new EbookException(ExceptionType.InvalidUrl),
             };
 

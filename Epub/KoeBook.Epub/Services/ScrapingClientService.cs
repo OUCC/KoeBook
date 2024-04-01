@@ -92,6 +92,8 @@ public sealed class ScrapingClientService : IScrapingClientService, IDisposable
 
         try
         {
+            var httpClient = _httpClientFactory.CreateClient();
+            httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.45 Safari/537.36");
             while (await _periodicTimer.WaitForNextTickAsync().ConfigureAwait(false) && _actionQueue.Count > 0)
             {
                 Func<HttpClient, Task>? action;
@@ -99,7 +101,7 @@ public sealed class ScrapingClientService : IScrapingClientService, IDisposable
                     if (!_actionQueue.TryDequeue(out action))
                         continue;
 
-                await action(_httpClientFactory.CreateClient()).ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
+                await action(httpClient).ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
             }
         }
         finally
