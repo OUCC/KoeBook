@@ -76,7 +76,10 @@ namespace KoeBook.Epub.Services
                     if (title != null)
                     {
                         if (title != chapterTitle)
+                        {
                             document.Chapters.Add(new Chapter() { Title = title });
+                            chapterTitle = title;
+                        }
                     }
                     else
                         document.EnsureChapter();
