@@ -23,8 +23,9 @@ internal class MockHttpClientHandler : HttpClientHandler
         };
     }
 
-    private HttpResponseMessage ProcessRequest(HttpRequestMessage requestMessage, CancellationToken cancellationToken)
+    private static HttpResponseMessage ProcessRequest(HttpRequestMessage requestMessage, CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         if (requestMessage.Method != HttpMethod.Get || requestMessage.Headers.UserAgent.Count == 0)
             throw new NotSupportedException();
         var (filePath, mediaType, isString) = requestMessage.RequestUri?.ToString() switch
@@ -33,6 +34,10 @@ internal class MockHttpClientHandler : HttpClientHandler
             "https://ncode.syosetu.com/n0000aa/1" => ("./TestData/Naro/n0000aa/1.html", "text/html; charset=UTF-8", true),
             "https://ncode.syosetu.com/n0000aa/2" => ("./TestData/Naro/n0000aa/2.html", "text/html; charset=UTF-8", true),
             "https://ncode.syosetu.com/n0000aa/3" => ("./TestData/Naro/n0000aa/3.html", "text/html; charset=UTF-8", true),
+            "https://ncode.syosetu.com/n0000ab" => ("./TestData/Naro/n0000ab.html", "text/html; charset=UTF-8", true),
+            "https://ncode.syosetu.com/n0000ab/1" => ("./TestData/Naro/n0000ab/1.html", "text/html; charset=UTF-8", true),
+            "https://ncode.syosetu.com/n0000ab/2" => ("./TestData/Naro/n0000ab/2.html", "text/html; charset=UTF-8", true),
+            "https://ncode.syosetu.com/n0000ab/3" => ("./TestData/Naro/n0000ab/3.html", "text/html; charset=UTF-8", true),
             _ => throw new NotSupportedException()
         };
 
