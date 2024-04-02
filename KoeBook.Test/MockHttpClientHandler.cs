@@ -46,12 +46,12 @@ internal class MockHttpClientHandler : HttpClientHandler
             Content = isString
                 ? new StringContent(File.ReadAllText(filePath), Encoding.UTF8, MediaTypeHeaderValue.Parse(mediaType))
                 : new ByteArrayContent(File.ReadAllBytes(filePath))
-                    {
-                        Headers =
+                {
+                    Headers =
                         {
                             ContentType = MediaTypeHeaderValue.Parse(mediaType),
                         }
-                    }
+                }
         };
     }
 }

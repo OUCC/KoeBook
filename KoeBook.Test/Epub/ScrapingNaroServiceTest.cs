@@ -53,7 +53,7 @@ public class ScrapingNaroServiceTest : DiTestBase
         {
             var text = Assert.IsType<Paragraph>(v.First);
             Assert.Equal(v.Second, text.Text);
-        }); 
+        });
     }
 
     [Theory]
