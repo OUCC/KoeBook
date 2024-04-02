@@ -58,11 +58,9 @@ public partial class App : Application
         Host = Microsoft.Extensions.Hosting.Host
             .CreateDefaultBuilder()
             .UseContentRoot(AppContext.BaseDirectory)
+            .UseCoreStartup()
             .ConfigureServices((context, services) =>
             {
-                // System
-                services.AddSingleton(TimeProvider.System);
-
                 // Default Activation Handler
                 services.AddTransient<ActivationHandler<LaunchActivatedEventArgs>, DefaultActivationHandler>();
 
@@ -84,34 +82,6 @@ public partial class App : Application
                 services.AddSingleton<INavigationService, NavigationService>();
                 services.AddSingleton<IDialogService, DialogService>();
                 services.AddSingleton<IDisplayStateChangeService, DisplayStateChangeService>();
-
-                // Core Services
-                services.AddHttpClient()
-                    .ConfigureHttpClientDefaults(builder =>
-                    {
-                        builder.SetHandlerLifetime(TimeSpan.FromMinutes(5));
-                    });
-                services.AddSingleton<IFileService, FileService>();
-                services.AddSingleton<ISecretSettingsService, SecretSettingsService>();
-                services.AddSingleton<IStyleBertVitsClientService, StyleBertVitsClientService>();
-                services.AddSingleton<ISoundGenerationSelectorService, SoundGenerationSelectorService>();
-                services.AddSingleton<ISoundGenerationService, SoundGenerationService>();
-                services.AddSingleton<IEpubGenerateService, EpubGenerateService>();
-                services.AddSingleton<IEpubDocumentStoreService, EpubDocumentStoreService>();
-                services.AddSingleton<IAnalyzerService, AnalyzerService>();
-                services.AddSingleton<ILlmAnalyzerService, ChatGptAnalyzerService>();
-                services.AddSingleton<OpenAI.Interfaces.IOpenAIService, MyOpenAiService>();
-
-                // Epub Services
-                services
-                    .AddKeyedSingleton<IScrapingClientService, ScrapingClientService>(nameof(ScrapingAozoraService))
-                    .AddKeyedSingleton<IScrapingClientService, ScrapingClientService>(nameof(ScrapingNaroService))
-                    .AddSingleton<IScraperSelectorService, ScraperSelectorService>()
-                    .AddSingleton<IScrapingService, ScrapingAozoraService>()
-                    .AddSingleton<IScrapingService, ScrapingNaroService>();
-                services.AddSingleton<IEpubCreateService, EpubCreateService>();
-                services.AddSingleton<ISplitBraceService, SplitBraceService>();
-                services.AddSingleton<IFileExtensionService, FileExtensionService>();
 
                 // Views and ViewModels
                 services.AddTransient<SettingsViewModel>();

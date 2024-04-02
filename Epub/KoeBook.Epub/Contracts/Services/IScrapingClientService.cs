@@ -15,4 +15,9 @@ public interface IScrapingClientService
     /// APIを叩く際は不要
     /// </summary>
     Task<ContentDispositionHeaderValue?> GetAsStreamAsync(string url, Stream destination, CancellationToken ct);
+
+    /// <summary>
+    /// ファイルダウンロードを行います
+    /// </summary>
+    Task DownloadToFileAsync(string url, string destPath, CancellationToken ct);
 }
