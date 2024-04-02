@@ -41,6 +41,10 @@ namespace KoeBook.Epub.Services
                 doc = await context.OpenAsync(request => request.Content(html), ct).ConfigureAwait(false);
             }
 
+            // 何らかの原因で、なろうのサイトでエラーが発生した場合エラー
+            if (doc.QuerySelector("#contents_main h1")?.InnerHtml == "エラー")
+                throw new EbookException(ExceptionType.WebScrapingFailed, "ページを読み込めませんでした。URLを確認してください。");
+
             // title の取得
             var bookTitleElement = doc.QuerySelector(".novel_title")
                 ?? throw new EbookException(ExceptionType.WebScrapingFailed, $"タイトルを取得できませんでした");
