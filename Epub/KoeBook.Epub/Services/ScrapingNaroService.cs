@@ -74,6 +74,7 @@ namespace KoeBook.Epub.Services
                     }
                 }
 
+                // title(作品における、class = "chapter_title" に当たるもの)が同じSectionは同じChapterに入れる
                 string? chapterTitle = null;
                 await foreach (var (title, section) in LoadDetailsAsync(context, novelInfo, imageDirectory, ct).ConfigureAwait(false).WithCancellation(ct))
                 {
@@ -121,6 +122,7 @@ namespace KoeBook.Epub.Services
             var mainText = doc.QuerySelector("#novel_honbun")
                 ?? throw new EbookException(ExceptionType.WebScrapingFailed, "本文がありません");
 
+            // なろうの本文は、1行が1つのpタグで構成されているので、本文のChildrenを1つずつ確認していく。
             foreach (var item in mainText.Children)
             {
                 if (item is not IHtmlParagraphElement)
