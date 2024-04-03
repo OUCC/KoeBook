@@ -6,6 +6,7 @@ using AngleSharp.Dom;
 using AngleSharp.Html.Dom;
 using AngleSharp.Io;
 using KoeBook.Core;
+using KoeBook.Core.Utilities;
 using KoeBook.Epub.Contracts.Services;
 using KoeBook.Epub.Models;
 using Microsoft.Extensions.DependencyInjection;
@@ -41,7 +42,7 @@ namespace KoeBook.Epub.Services
             // EpubDocument の生成
             var document = new EpubDocument(TextReplace(bookTitle.InnerHtml), TextReplace(bookAuther.InnerHtml), coverFilePath, id);
 
-            var (contentsIds, chapterExist, sectionExist) = LoadToc(doc, document);
+            var (contentsIds, hasChapter, hasSection) = LoadToc(doc, document);
 
             // 本文を取得
             var mainText = doc.QuerySelector(".main_text")!;
@@ -49,13 +50,13 @@ namespace KoeBook.Epub.Services
 
             // 本文を分割しながらEpubDocumntに格納
             // 直前のNodeを確認した操作で、その内容をParagraphに追加した場合、true
-            bool previous = false;
+            var previous = false;
             // 各ChapterとSection のインデックス
             var chapterNum = -1;
             var sectionNum = -1;
 
             // 直前のimgタグにaltがなかったときtrueになる。
-            bool skipCaption = false;
+            var skipCaption = false;
 
             foreach (var element in mainText.Children)
             {
@@ -70,306 +71,161 @@ namespace KoeBook.Epub.Services
                         }
                         break;
                     case TagNames.Div:
+                        var midashi = element.QuerySelector(".midashi_anchor");
+                        if (midashi != null)
                         {
-                            var midashi = element.QuerySelector(".midashi_anchor");
-                            if (midashi != null)
+                            if (midashi.Id == null)
+                                throw new EbookException(ExceptionType.WebScrapingFailed, "予期しないHTMLの構造です。\nclass=\"midashi_anchor\"ではなくid=\"midashi___\"が存在します。");
+
+                            if (!int.TryParse(midashi.Id.Replace("midashi", ""), out var midashiId))
+                                throw new EbookException(ExceptionType.WebScrapingFailed, $"予期しないアンカータグが見つかりました。id = {midashi.Id}");
+
+                            if (contentsIds.Contains(midashiId))
                             {
-                                if (midashi.Id == null)
-                                    throw new EbookException(ExceptionType.WebScrapingFailed, "予期しないHTMLの構造です。\nclass=\"midashi_anchor\"ではなくid=\"midashi___\"が存在します。");
-
-                                if (!int.TryParse(midashi.Id.Replace("midashi", ""), out var midashiId))
-                                    throw new EbookException(ExceptionType.WebScrapingFailed, $"予期しないアンカータグが見つかりました。id = {midashi.Id}");
-
-                                if (contentsIds.Contains(midashiId))
+                                var contentsId = contentsIds.IndexOf(midashiId);
+                                switch (contentsIds[contentsId] - contentsIds[contentsId - 1])
                                 {
-                                    var contentsId = contentsIds.IndexOf(midashiId);
-                                    switch (contentsIds[contentsId] - contentsIds[contentsId - 1])
-                                    {
-                                        case 100:
-                                            if (chapterNum >= 0 && sectionNum >= 0)
-                                            {
-                                                document.Chapters[chapterNum].Sections[sectionNum].Elements.RemoveAt(document.Chapters[chapterNum].Sections[sectionNum].Elements.Count - 1);
-                                            }
-                                            chapterNum++;
-                                            sectionNum = -1;
-                                            break;
-                                        case 10:
-                                            if (chapterNum == -1)
-                                            {
-                                                chapterNum++;
-                                                sectionNum = -1;
-                                            }
-                                            if (chapterNum >= 0 && sectionNum >= 0)
-                                            {
-                                                document.Chapters[chapterNum].Sections[sectionNum].Elements.RemoveAt(document.Chapters[chapterNum].Sections[sectionNum].Elements.Count - 1);
-                                            }
-                                            sectionNum++;
-                                            break;
-                                        default:
-                                            break;
-                                    }
-                                }
-                                else //小見出し、行中小見出しの処理
-                                {
-                                    if (chapterNum == -1)
-                                    {
-                                        if (chapterExist)
+                                    case 100:
+                                        if (chapterNum >= 0 && sectionNum >= 0)
                                         {
-                                            document.Chapters.Insert(0, new Chapter());
+                                            document.Chapters[chapterNum].Sections[sectionNum].Elements.RemoveAt(^1);
                                         }
                                         chapterNum++;
                                         sectionNum = -1;
-                                    }
-                                    if (sectionNum == -1)
-                                    {
-                                        if (sectionExist)
+                                        break;
+                                    case 10:
+                                        if (chapterNum == -1)
                                         {
-                                            document.EnsureChapter();
-                                            document.Chapters[^1].Sections.Insert(0, new Section("___"));
+                                            chapterNum++;
+                                            sectionNum = -1;
+                                        }
+                                        if (chapterNum >= 0 && sectionNum >= 0)
+                                        {
+                                            document.Chapters[chapterNum].Sections[sectionNum].Elements.RemoveAt(^1);
                                         }
                                         sectionNum++;
-                                    }
-                                    document.EnsureParagraph(chapterNum, sectionNum);
-                                    AddParagraphs(document.Chapters[chapterNum].Sections[sectionNum].Elements, element, true);
+                                        break;
+                                    default:
+                                        break;
                                 }
+                            }
+                            else //小見出し、行中小見出しの処理
+                            {
+                                (chapterNum, sectionNum) = SetChapterAndSection(document, hasChapter, hasSection, chapterNum, sectionNum);
+                                document.EnsureParagraph(chapterNum, sectionNum);
+                                AddParagraphs(document.Chapters[chapterNum].Sections[sectionNum].Elements, element, true);
+                            }
+                        }
+                        else
+                        {
+                            if (element.ClassName == "caption")
+                            {
+                                // https://www.aozora.gr.jp/annotation/graphics.html#:~:text=%3Cdiv%20class%3D%22caption%22%3E を処理するための部分
+                                document.EnsureParagraph(chapterNum, sectionNum);
+                                AddParagraphs(document.Chapters[chapterNum].Sections[sectionNum].Elements, element, false);
                             }
                             else
                             {
-                                if (element.ClassName == "caption")
-                                {
-                                    // https://www.aozora.gr.jp/annotation/graphics.html#:~:text=%3Cdiv%20class%3D%22caption%22%3E を処理するための部分
-                                    document.EnsureParagraph(chapterNum, sectionNum);
-                                    AddParagraphs(document.Chapters[chapterNum].Sections[sectionNum].Elements, element, false);
-                                }
-                                else
-                                {
-                                    if (chapterNum == -1)
-                                    {
-                                        if (chapterExist)
-                                        {
-                                            document.Chapters.Insert(0, new Chapter());
-                                        }
-                                        chapterNum++;
-                                        sectionNum = -1;
-                                    }
-                                    if (sectionNum == -1)
-                                    {
-                                        if (sectionExist)
-                                        {
-                                            document.EnsureChapter();
-                                            document.Chapters[^1].Sections.Insert(0, new Section("___"));
-                                        }
-                                        sectionNum++;
-                                    }
-                                    document.EnsureParagraph(chapterNum, sectionNum);
-                                    AddParagraphs(document.Chapters[chapterNum].Sections[sectionNum].Elements, element, true);
-                                }
+                                (chapterNum, sectionNum) = SetChapterAndSection(document, hasChapter, hasSection, chapterNum, sectionNum);
+                                document.EnsureParagraph(chapterNum, sectionNum);
+                                AddParagraphs(document.Chapters[chapterNum].Sections[sectionNum].Elements, element, true);
                             }
-
-                            break;
                         }
 
+                        break;
                     case TagNames.Img:
                         {
                             var img = (IHtmlImageElement)element;
 
-                            if (chapterNum == -1)
-                            {
-                                if (chapterExist)
-                                {
-                                    document.Chapters.Insert(0, new Chapter());
-                                }
-                                chapterNum++;
-                                sectionNum = -1;
-                            }
-                            if (sectionNum == -1)
-                            {
-                                if (sectionExist)
-                                {
-                                    document.EnsureChapter();
-                                    document.Chapters[^1].Sections.Insert(0, new Section("___"));
-                                }
-                                sectionNum++;
-                            }
+                            (chapterNum, sectionNum) = SetChapterAndSection(document, hasChapter, hasSection, chapterNum, sectionNum);
 
-                            if (element.ClassName != "gaiji")
+                            if (element.ClassName == "gaiji")
+                                break;
+
+                            if (img.Source != null)
                             {
-                                if (img.Source != null)
+                                // 画像のダウンロード 
+                                var filePass = Path.Combine(imageDirectory, FileUrlToFileName().Replace(img.Source, "$1"));
+                                await _scrapingClientService.DownloadToFileAsync(img.Source, filePass, ct).ConfigureAwait(false);
+                                document.EnsureSection(chapterNum);
+                                if (document.Chapters[chapterNum].Sections[sectionNum].Elements.Count > 1)
                                 {
-                                    // 画像のダウンロード 
-                                    var filePass = Path.Combine(imageDirectory, FileUrlToFileName().Replace(img.Source, "$1"));
-                                    await _scrapingClientService.DownloadToFileAsync(img.Source, filePass, ct).ConfigureAwait(false);
-                                    document.EnsureSection(chapterNum);
-                                    if (document.Chapters[chapterNum].Sections[sectionNum].Elements.Count > 1)
-                                    {
-                                        document.Chapters[chapterNum].Sections[sectionNum].Elements.Add(new Picture(filePass));
-                                    }
-                                }
-                                if (img.AlternativeText != null)
-                                {
-                                    document.EnsureParagraph(chapterNum, sectionNum);
-                                    if (document.Chapters[chapterNum].Sections[sectionNum].Elements[^1] is Paragraph paragraph)
-                                    {
-                                        paragraph.Text += TextReplace(img.AlternativeText);
-                                        document.Chapters[chapterNum].Sections[sectionNum].Elements.Add(new Paragraph());
-                                    }
-                                    skipCaption = false;
-                                }
-                                else
-                                {
-                                    skipCaption = true;
+                                    document.Chapters[chapterNum].Sections[sectionNum].Elements.Add(new Picture(filePass));
                                 }
                             }
 
-                            break;
-                        }
-
-                    case TagNames.Span:
-                        {
-                            if (element.ClassName == "caption")
+                            if (img.AlternativeText is null)
                             {
-                                if (skipCaption)
-                                {
-                                    if (document.Chapters[chapterNum].Sections[sectionNum].Elements[^2] is Paragraph paragraph)
-                                    {
-                                        paragraph.Text = TextProcess(element) + "の画像";
-                                    }
-                                }
-                                else
-                                {
-                                    if (document.Chapters[chapterNum].Sections[sectionNum].Elements[^1] is Paragraph paragraph)
-                                    {
-                                        paragraph.Text = TextProcess(element) + "の画像";
-                                    }
-                                }
-                            }
-                            else if (element.ClassName == "notes")
-                            {
-                                switch (element.InnerHtml)
-                                {
-                                    case "［＃改丁］":
-                                    case "［＃改ページ］":
-                                    case "［＃改見開き］":
-                                    case "［＃改段］":
-                                    case "［＃ページの左右中央］":
-                                        break;
-                                    default:
-                                        document.EnsureParagraph(chapterNum, sectionNum);
-                                        if (document.Chapters[chapterNum].Sections[sectionNum].Elements[^1] is Paragraph paragraph)
-                                        {
-                                            foreach (var splitText in _splitBraceService.SplitBrace(TextProcess(element)))
-                                            {
-                                                if (document.Chapters[chapterNum].Sections[sectionNum].Elements[^1] is Paragraph paragraph1)
-                                                {
-                                                    paragraph1.Text += splitText;
-                                                }
-                                                document.Chapters[chapterNum].Sections[sectionNum].Elements.Add(new Paragraph());
-                                            }
-                                        }
-                                        break;
-                                }
-                            }
-                            else
-                            {
-                                if (chapterNum == -1)
-                                {
-                                    if (chapterExist)
-                                    {
-                                        document.Chapters.Insert(0, new Chapter());
-                                    }
-                                    chapterNum++;
-                                    sectionNum = -1;
-                                }
-                                if (sectionNum == -1)
-                                {
-                                    if (sectionExist)
-                                    {
-                                        document.EnsureChapter();
-                                        document.Chapters[^1].Sections.Insert(0, new Section("___"));
-                                    }
-                                    sectionNum++;
-                                }
-
-                                document.EnsureParagraph(chapterNum, sectionNum);
-                                AddParagraphs(document.Chapters[chapterNum].Sections[sectionNum].Elements, element, false);
-                                // 想定していない構造が見つかったことをログに出力した方が良い？
+                                skipCaption = true;
+                                continue;
                             }
 
-                            break;
-                        }
-
-                    default:
-                        {
-                            if (chapterNum == -1)
-                            {
-                                if (chapterExist)
-                                {
-                                    document.Chapters.Insert(0, new Chapter());
-                                }
-                                chapterNum++;
-                                sectionNum = -1;
-                            }
-                            if (sectionNum == -1)
-                            {
-                                if (sectionExist)
-                                {
-                                    document.EnsureChapter();
-                                    document.Chapters[^1].Sections.Insert(0, new Section("___"));
-                                }
-                                sectionNum++;
-                            }
                             document.EnsureParagraph(chapterNum, sectionNum);
-
-                            AddParagraphs(document.Chapters[chapterNum].Sections[sectionNum].Elements, element, false);
+                            if (document.Chapters[chapterNum].Sections[sectionNum].Elements[^1] is Paragraph paragraph)
+                            {
+                                paragraph.Text += TextReplace(img.AlternativeText);
+                                document.Chapters[chapterNum].Sections[sectionNum].Elements.Add(new Paragraph());
+                            }
+                            skipCaption = false;
                             break;
+                        }
+                    case TagNames.Span:
+                        if (element.ClassName == "caption")
+                        {
+                            if (document.Chapters[chapterNum].Sections[sectionNum].Elements[skipCaption ? ^2 : ^1] is Paragraph paragraph)
+                                paragraph.Text = TextProcess(element) + "の画像";
+                        }
+                        else if (element.ClassName == "notes")
+                        {
+                            switch (element.InnerHtml)
+                            {
+                                case "［＃改丁］":
+                                case "［＃改ページ］":
+                                case "［＃改見開き］":
+                                case "［＃改段］":
+                                case "［＃ページの左右中央］":
+                                    break;
+                                default:
+                                    document.EnsureParagraph(chapterNum, sectionNum);
+                                    AddParagraphs(document.Chapters[chapterNum].Sections[sectionNum].Elements, element, true);
+                                    break;
+                            }
+                        }
+                        else
+                        {
+                            (chapterNum, sectionNum) = SetChapterAndSection(document, hasChapter, hasSection, chapterNum, sectionNum);
+                            document.EnsureParagraph(chapterNum, sectionNum);
+                            AddParagraphs(document.Chapters[chapterNum].Sections[sectionNum].Elements, element, false);
                             // 想定していない構造が見つかったことをログに出力した方が良い？
                         }
+
+                        break;
+                    default:
+                        (chapterNum, sectionNum) = SetChapterAndSection(document, hasChapter, hasSection, chapterNum, sectionNum);
+                        document.EnsureParagraph(chapterNum, sectionNum);
+                        AddParagraphs(document.Chapters[chapterNum].Sections[sectionNum].Elements, element, false);
+                        break;
+                        // 想定していない構造が見つかったことをログに出力した方が良い？
                 }
 
                 if (nextNode is null)
                     continue;
 
-                if (nextNode.NodeType == NodeType.Text)
-                {
-                    var text = nextNode.Text();
-                    if (!string.IsNullOrWhiteSpace(text))
-                    {
-                        previous = true;
-
-                        if (chapterNum == -1)
-                        {
-                            if (chapterExist)
-                            {
-                                document.Chapters.Insert(0, new Chapter());
-                            }
-                            chapterNum++;
-                            sectionNum = -1;
-                        }
-                        if (sectionNum == -1)
-                        {
-                            if (sectionExist)
-                            {
-                                document.EnsureChapter();
-                                document.Chapters[^1].Sections.Insert(0, new Section("___"));
-                            }
-                            sectionNum++;
-                        }
-                        document.EnsureParagraph(chapterNum, sectionNum);
-                        AddParagraphs(document.Chapters[chapterNum].Sections[sectionNum].Elements, text, false);
-                    }
-                    else
-                    {
-                        previous = false;
-                    }
-                }
-                else
+                if (nextNode.NodeType != NodeType.Text || string.IsNullOrWhiteSpace(nextNode.TextContent))
                 {
                     previous = false;
+                    continue;
                 }
+
+                previous = true;
+
+                (chapterNum, sectionNum) = SetChapterAndSection(document, hasChapter, hasSection, chapterNum, sectionNum);
+                document.EnsureParagraph(chapterNum, sectionNum);
+                AddParagraphs(document.Chapters[chapterNum].Sections[sectionNum].Elements, nextNode.TextContent, false);
             }
 
             // 末尾の空のparagraphを削除
-            document.Chapters[^1].Sections[^1].Elements.RemoveAt(document.Chapters[^1].Sections[^1].Elements.Count - 1);
+            document.Chapters[^1].Sections[^1].Elements.RemoveAt(^1);
 
             return document;
         }
@@ -382,7 +238,7 @@ namespace KoeBook.Epub.Services
             }
             else
             {
-                var rubies = element.QuerySelectorAll("ruby");
+                var rubies = element.QuerySelectorAll(TagNames.Ruby);
                 if (rubies.Length > 0)
                 {
                     var resultBuilder = new StringBuilder();
@@ -399,7 +255,7 @@ namespace KoeBook.Epub.Services
 
                     foreach (var item in element.Children)
                     {
-                        if (item.TagName == "RUBY")
+                        if (item.TagName == TagNames.Ruby)
                         {
                             if (item.QuerySelectorAll("img").Length > 0)
                             {
@@ -430,7 +286,7 @@ namespace KoeBook.Epub.Services
                     }
                     return resultBuilder.ToString();
                 }
-                else if (element.TagName == "RUBY")
+                else if (element.TagName == TagNames.Ruby)
                 {
                     if (element.QuerySelectorAll("img").Length > 0)
                     {
@@ -561,6 +417,32 @@ namespace KoeBook.Epub.Services
                 });
             }
             return (contentsIds, hasChapter, hasSection);
+        }
+
+        /// <summary>
+        /// 新規状態のときに初期設定を行います
+        /// </summary>
+        private static (int focusChapterIdx, int focusSectionIdx) SetChapterAndSection(EpubDocument document, bool hasChapter, bool hasSection, int chapterNum, int sectionNum)
+        {
+            if (chapterNum == -1)
+            {
+                if (hasChapter)
+                {
+                    document.Chapters.Insert(0, new Chapter());
+                }
+                chapterNum++;
+                sectionNum = -1;
+            }
+            if (sectionNum == -1)
+            {
+                if (hasSection)
+                {
+                    document.EnsureChapter();
+                    document.Chapters[^1].Sections.Insert(0, new Section("___"));
+                }
+                sectionNum++;
+            }
+            return (chapterNum, sectionNum);
         }
 
         private static string GetCardUrl(string url)
