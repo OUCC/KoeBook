@@ -15,9 +15,10 @@ public partial class AnalyzerService(IScraperSelectorService scrapingService, IE
     private readonly ILlmAnalyzerService _llmAnalyzerService = llmAnalyzerService;
     private Dictionary<string, string> _rubyReplacements = new Dictionary<string, string>();
 
-    public async ValueTask<BookScripts> AnalyzeAsync(BookProperties bookProperties, string tempDirectory, string coverFilePath, CancellationToken cancellationToken)
-    {
-        coverFilePath = Path.Combine(tempDirectory, "Cover.png");
+    public async ValueTask<BookScripts> AnalyzeAsync(BookProperties bookProperties, string tempDirectory, CancellationToken cancellationToken)
+    { 
+        Directory.CreateDirectory(tempDirectory);
+        var coverFilePath = Path.Combine(tempDirectory, "Cover.png");
         using var fs = File.Create(coverFilePath);
         await fs.WriteAsync(CoverFile.ToArray(), cancellationToken);
         await fs.FlushAsync(cancellationToken);
@@ -27,9 +28,13 @@ public partial class AnalyzerService(IScraperSelectorService scrapingService, IE
         {
             document = await _scrapingService.ScrapingAsync(bookProperties.Source, coverFilePath, tempDirectory, bookProperties.Id, cancellationToken);
         }
+        catch (EbookException)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
-            EbookException.Throw(ExceptionType.WebScrapingFailed, "", ex);
+            EbookException.Throw(ExceptionType.WebScrapingFailed, innerException: ex);
             return default;
         }
         _epubDocumentStoreService.Register(document, cancellationToken);
@@ -45,7 +50,7 @@ public partial class AnalyzerService(IScraperSelectorService scrapingService, IE
                     {
                         var line = paragraph.Text;
                         // rubyタグがあればルビのdictionaryに登録
-                        var rubyDict = ExtractRuby(line);
+                        var rubyDict = ExtractRuby(line).ToDictionary();
 
                         foreach (var ruby in rubyDict)
                         {
@@ -85,20 +90,11 @@ public partial class AnalyzerService(IScraperSelectorService scrapingService, IE
         return bookScripts;
     }
 
-    private static Dictionary<string, string> ExtractRuby(string text)
+    private static IEnumerable<KeyValuePair<string, string>> ExtractRuby(string text)
     {
-        var rubyDict = new Dictionary<string, string>();
-        var rubyRegex = new Regex("<ruby><rb>(.*?)</rb><rp>（</rp><rt>(.*?)</rt><rp>）</rp></ruby>");
-
-        foreach (Match match in rubyRegex.Matches(text))
-        {
-            if (!rubyDict.ContainsKey(match.Groups[1].Value))
-            {
-                rubyDict.Add(match.Groups[1].Value, match.Groups[2].Value);
-            }
-        }
-
-        return rubyDict;
+        return RubyRegex()
+            .Matches(text)
+            .Select(m => KeyValuePair.Create(m.Groups[1].Value, m.Groups[2].Value));
     }
 
     private static string ReplaceBaseTextWithRuby(string text, Dictionary<string, string> rubyDict)
@@ -113,4 +109,7 @@ public partial class AnalyzerService(IScraperSelectorService scrapingService, IE
 
         return resultText;
     }
+
+    [GeneratedRegex("<ruby><rb>(.*?)</rb><rp>（</rp><rt>(.*?)</rt><rp>）</rp></ruby>")]
+    private static partial Regex RubyRegex();
 }

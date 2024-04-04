@@ -1,8 +1,6 @@
 ﻿using KoeBook.Core.Contracts.Services;
 using KoeBook.Core.Helpers;
 using KoeBook.Core.Models;
-using KoeBook.Epub;
-using KoeBook.Epub.Models;
 using static KoeBook.Core.Helpers.IDisplayStateChangeEx;
 
 namespace KoeBook.Services.CoreMocks;
@@ -11,7 +9,7 @@ public class AnalyzerServiceMock(IDisplayStateChangeService stateService) : IAna
 {
     private readonly IDisplayStateChangeService _stateService = stateService;
 
-    public async ValueTask<BookScripts> AnalyzeAsync(BookProperties bookProperties, string tempDirectory, string coverFilePath, CancellationToken cancellationToken)
+    public async ValueTask<BookScripts> AnalyzeAsync(BookProperties bookProperties, string tempDirectory, CancellationToken cancellationToken)
     {
         DisplayStateChanging stateChanging;
         if (bookProperties.SourceType == SourceType.Url)

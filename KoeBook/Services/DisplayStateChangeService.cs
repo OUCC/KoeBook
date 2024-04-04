@@ -27,4 +27,13 @@ internal class DisplayStateChangeService(IGenerationTaskService taskService) : I
             taskService.GetProcessingTask(bookProperties.Id).State = state;
         });
     }
+
+    public void UpdateTitle(BookProperties bookProperties, string title)
+    {
+        var taskService = _taskService; // thisをキャプチャしないようにする
+        _ = App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+        {
+            taskService.GetProcessingTask(bookProperties.Id).Title = title;
+        });
+    }
 }

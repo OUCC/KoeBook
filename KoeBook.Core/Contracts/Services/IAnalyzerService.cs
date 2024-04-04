@@ -8,5 +8,5 @@ public interface IAnalyzerService
     /// 本の情報の取得・解析を行います
     /// </summary>
     /// <returns>編集前の読み上げテキスト</returns>
-    ValueTask<BookScripts> AnalyzeAsync(BookProperties bookProperties, string tempDirectory, string coverFilePath, CancellationToken cancellationToken);
+    ValueTask<BookScripts> AnalyzeAsync(BookProperties bookProperties, string tempDirectory,  CancellationToken cancellationToken);
 }
