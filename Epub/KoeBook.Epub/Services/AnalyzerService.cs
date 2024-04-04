@@ -16,7 +16,7 @@ public partial class AnalyzerService(IScraperSelectorService scrapingService, IE
     private Dictionary<string, string> _rubyReplacements = new Dictionary<string, string>();
 
     public async ValueTask<BookScripts> AnalyzeAsync(BookProperties bookProperties, string tempDirectory, CancellationToken cancellationToken)
-    { 
+    {
         Directory.CreateDirectory(tempDirectory);
         var coverFilePath = Path.Combine(tempDirectory, "Cover.png");
         using var fs = File.Create(coverFilePath);
@@ -53,12 +53,7 @@ public partial class AnalyzerService(IScraperSelectorService scrapingService, IE
                         var rubyDict = ExtractRuby(line).ToDictionary();
 
                         foreach (var ruby in rubyDict)
-                        {
-                            if (!_rubyReplacements.ContainsKey(ruby.Key))
-                            {
-                                _rubyReplacements.Add(ruby.Key, ruby.Value);
-                            }
-                        }
+                            _rubyReplacements.TryAdd(ruby.Key, ruby.Value);
                         // ルビを置換
                         line = ReplaceBaseTextWithRuby(line, rubyDict);
 
