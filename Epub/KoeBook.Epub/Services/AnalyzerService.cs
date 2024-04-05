@@ -12,8 +12,7 @@ public partial class AnalyzerService(IScraperSelectorService scrapingService, IE
 {
     private readonly IScraperSelectorService _scrapingService = scrapingService;
     private readonly IEpubDocumentStoreService _epubDocumentStoreService = epubDocumentStoreService;
-    private readonly ILlmAnalyzerService _llmAnalyzerService = llmAnalyzerService;
-    private Dictionary<string, string> _rubyReplacements = new Dictionary<string, string>();
+    private readonly ILlmAnalyzerService _llmAnalyzerService = llmAnalyzerService; 
 
     public async ValueTask<BookScripts> AnalyzeAsync(BookProperties bookProperties, string tempDirectory, CancellationToken cancellationToken)
     {
@@ -76,6 +75,6 @@ public partial class AnalyzerService(IScraperSelectorService scrapingService, IE
         return RubyRegex().Replace(text, m => m.Groups[2].Value);
     }
 
-    [GeneratedRegex("<ruby><rb>(.*?)</rb><rp>（</rp><rt>(.*?)</rt><rp>）</rp></ruby>")]
+    [GeneratedRegex(@"<ruby>\s*<rb>(.*?)</rb>\s*<rp>\s*[（《\(]\s*</rp>\s*<rt>(.*?)</rt>\s*<rp>\s*[）》\)]\s*</rp>\s*</ruby>", RegexOptions.Multiline)]
     private static partial Regex RubyRegex();
 }

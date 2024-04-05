@@ -14,9 +14,10 @@ public class AnalyzerServiceTest
         ああ<ruby><rb>漢字</rb><rp>（</rp><rt>かんじ</rt><rp>）</rp></ruby>あああ
         ああ<ruby><rb>漢字1</rb><rp>（</rp><rt>かんじ1</rt><rp>）</rp></ruby>あああ
         """, "ああかんじあああ\nああかんじあああ\nああかんじ1あああ")]
-    [InlineData("<ruby><rb>佐久平</rb><rp>《</rp><rt>さくだいら</rt><rp>》</rp></ruby>　<ruby><rb>啓介</rb><rp>《</rp><rt>けいすけ</rt><rp>》</rp></ruby>",
-        "<ruby><rb>佐久平</rb><rp>《</rp><rt>さくだいら</rt><rp>》</rp></ruby>　<ruby><rb>啓介</rb><rp>《</rp><rt>けいすけ</rt><rp>》</rp></ruby>")]
-    [InlineData("<ruby><rb>漢字</rb>\n<rp>（</rp><rt>かんじ</rt><rp>）</rp></ruby>", "<ruby><rb>漢字</rb>\n<rp>（</rp><rt>かんじ</rt><rp>）</rp></ruby>")]
+    [InlineData("<ruby> <rb>佐久平</rb> <rp>\n《 </rp> <rt>さくだいら</rt> <rp>》</rp>  </ruby>　<ruby><rb>啓介</rb><rp>《</rp><rt>けいすけ</rt><rp>》</rp></ruby>",
+        "さくだいら　けいすけ")]
+    [InlineData("<ruby><rb>漢字</rb>\n<rp>（</rp><rt>かんじ</rt><rp>）</rp></ruby>", "かんじ")]
+    [InlineData("ああ<ruby><rb>漢字</rb><rp>（</rp><rt>かんじ</rt><rp>）</rp></ruby>あああ<ruby><rb>漢字</rb><rp>（</rp><rt>カンジ</rt><rp>）</rp></ruby>", "ああかんじあああカンジ")]
     public void ReplaceBaseTextWithRuby(string input, string expected)
     {
         var result = AnalyzerServiceProxy.ReplaceBaseTextWithRuby(null, input);
