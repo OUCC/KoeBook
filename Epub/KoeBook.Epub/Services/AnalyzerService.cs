@@ -12,7 +12,7 @@ public partial class AnalyzerService(IScraperSelectorService scrapingService, IE
 {
     private readonly IScraperSelectorService _scrapingService = scrapingService;
     private readonly IEpubDocumentStoreService _epubDocumentStoreService = epubDocumentStoreService;
-    private readonly ILlmAnalyzerService _llmAnalyzerService = llmAnalyzerService; 
+    private readonly ILlmAnalyzerService _llmAnalyzerService = llmAnalyzerService;
 
     public async ValueTask<BookScripts> AnalyzeAsync(BookProperties bookProperties, string tempDirectory, CancellationToken cancellationToken)
     {
