@@ -3,9 +3,6 @@ using AngleSharp;
 using AngleSharp.Dom;
 using KoeBook.Epub.Models;
 using KoeBook.Epub.Services;
-using System.Runtime.CompilerServices;
-using System.Linq;
-using System.Net.Http;
 
 namespace KoeBook.Test.Epub;
 
@@ -18,9 +15,9 @@ public class ScrapingAozoraServiceTest
         (string, EpubDocument, EpubDocument)[] cases = [
             // レイアウト
             // 1.1 改丁
-            (ToMainText(@"<span class=""notes"">［＃改丁］</span>"), EmptySingleParagraph , new EpubDocument("", "", "", Guid.NewGuid()) { Chapters = [new Chapter() { Sections = [new Section("") { Elements = [new Paragraph() { Text = "［＃改丁］", ScriptLine = new Core.Models.ScriptLine("", "", "") }] }] }] }),
+            (@"<span class=""notes"">［＃改丁］</span>", EmptySingleParagraph , new EpubDocument("", "", "", Guid.NewGuid()) { Chapters = [new Chapter() { Sections = [new Section("") { Elements = [new Paragraph() { Text = "［＃改丁］", ScriptLine = new Core.Models.ScriptLine("", "", "") }] }] }] }),
         ];
-        return cases.Select(c => new object[] { c.Item1, c.Item2, c.Item3 }).ToArray();
+        return cases.Select(c => new object[] { ToMainText(c.Item1), c.Item2, c.Item3 }).ToArray();
     }
 
     /// <summary>
@@ -44,7 +41,7 @@ public class ScrapingAozoraServiceTest
         var scraper = new ScrapingAozoraService(new SplitBraceService(), new ScrapingClientService(new httpClientFactory(), TimeProvider.System));
         scraper._document() = initial;
 
-        scraper.ProcessChildren(mainText);
+        scraper.ProcessChildren(mainText!);
 
         Assert.True(HaveSmaeText(scraper._document(), expexted));
     }
@@ -62,16 +59,34 @@ public class ScrapingAozoraServiceTest
         same = (document.Title == comparison.Title);
         same = (document.Author == comparison.Author);
         same = (document.CssClasses == comparison.CssClasses);
+        same = (document.Chapters.Count == comparison.Chapters.Count);
 
         foreach ((Chapter selfChapter, Chapter comparisonChapter) in document.Chapters.Zip(comparison.Chapters))
         {
             same = (selfChapter.Title == comparisonChapter.Title);
+            same = (selfChapter.Sections.Count == comparisonChapter.Sections.Count);
 
             foreach ((Section selfSection, Section comparisonSection) in selfChapter.Sections.Zip(comparisonChapter.Sections))
             {
                 same = (selfSection.Title == comparisonSection.Title);
+                same = (selfSection.Elements.Count == comparisonSection.Elements.Count);
 
-                same = selfSection.Elements.Equals(comparisonSection.Elements);
+                foreach ((KoeBook.Epub.Models.Element selfElement, KoeBook.Epub.Models.Element comparisonElement) in selfSection.Elements.Zip(comparisonSection.Elements))
+                {
+                    switch (selfElement, comparisonElement)
+                    {
+                        case (Paragraph selfParagraph, Paragraph comparisonParagraph):
+                            same = (selfParagraph.Text == comparisonParagraph.Text);
+                            same = (selfParagraph.ScriptLine?.Text == comparisonParagraph.ScriptLine?.Text);
+                            break;
+                        case (Picture selfPicture, Picture comparisonPicture):
+                            same = (selfPicture.PictureFilePath == comparisonPicture.PictureFilePath);
+                            break;
+                        default:
+                            same = false;
+                            break;
+                    }
+                }
             }
         }
 

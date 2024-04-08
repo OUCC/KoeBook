@@ -19,7 +19,7 @@ namespace KoeBook.Epub.Services
         private readonly ISplitBraceService _splitBraceService = splitBraceService;
         private readonly IScrapingClientService _scrapingClientService = scrapingClientService;
 
-        private EpubDocument _document;
+        private EpubDocument? _document;
 
 
         public bool IsMatchSite(Uri uri)
