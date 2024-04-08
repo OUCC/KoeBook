@@ -3,6 +3,7 @@ using AngleSharp.Dom;
 using AngleSharp.Html.Dom;
 using AngleSharp.Io;
 using KoeBook.Core;
+using KoeBook.Core.Utilities;
 using KoeBook.Epub.Contracts.Services;
 using KoeBook.Epub.Models;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,6 +15,8 @@ namespace KoeBook.Epub.Services
     {
         private readonly ISplitBraceService _splitBraceService = splitBraceService;
         private readonly IScrapingClientService _scrapingClientService = scrapingClientService;
+
+        private EpubDocument _document;
 
 
         public bool IsMatchSite(Uri uri)
@@ -587,6 +590,14 @@ namespace KoeBook.Epub.Services
             returnText = RomanNumText2().Replace(returnText, "$1");
             returnText = returnText.Replace("\n", "");
             return returnText;
+        }
+
+        private SplittedLineBuilder ParagraphLineBuilder = new SplittedLineBuilder();
+        private SplittedLineBuilder ScriptLineLineBuilder = new SplittedLineBuilder();
+
+        internal void ProcessChildren(IElement element, List<string> classes, string style)
+        {
+
         }
 
 
