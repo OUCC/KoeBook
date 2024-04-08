@@ -24,7 +24,7 @@ public class ScrapingAozoraServiceTest
     }
 
     /// <summary>
-    /// を"<div class = \"main_text\"></div>"で囲む
+    /// (htmlの要素の)テキストを"<div class = \"main_text\"></div>"で囲む
     /// </summary>
     /// <param name="text">divタグで囲むhtmlの要素</param>
     /// <returns>divタグで囲まれた<paramref name="text"/></returns>
