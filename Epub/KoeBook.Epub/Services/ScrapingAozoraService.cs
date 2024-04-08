@@ -452,6 +452,21 @@ namespace KoeBook.Epub.Services
             return UrlBookToCard().Replace(url, "$1card$2$3");
         }
 
+        private SplittedLineBuilder ParagraphLineBuilder = new SplittedLineBuilder();
+        private SplittedLineBuilder ScriptLineLineBuilder = new SplittedLineBuilder();
+
+
+        
+        /// <summary>
+        /// ある要素のChildrenに応じた処理を行います。
+        /// </summary>
+        /// <param name="element">処理を行う要素</param>
+        internal void ProcessChildren(IElement element)
+        {
+            
+        }
+
+
         [System.Text.RegularExpressions.GeneratedRegex(@"(https://www\.aozora\.gr\.jp/cards/\d{6}/)files/(\d{1,})_\d{1,}(\.html)")]
         private static partial System.Text.RegularExpressions.Regex UrlBookToCard();
 
