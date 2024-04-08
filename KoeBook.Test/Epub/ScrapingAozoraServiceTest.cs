@@ -20,7 +20,7 @@ public class ScrapingAozoraServiceTest
             // 1.1 改丁
             (ToMainText(@"<span class=""notes"">［＃改丁］</span>"), EmptySingleParagraph , new EpubDocument("", "", "", Guid.NewGuid()) { Chapters = [new Chapter() { Sections = [new Section("") { Elements = [new Paragraph() { Text = "［＃改丁］", ScriptLine = new Core.Models.ScriptLine("", "", "") }] }] }] }),
         ];
-        return cases.Select(c => new object[] { c.Item1, c.Item2 }).ToArray();
+        return cases.Select(c => new object[] { c.Item1, c.Item2, c.Item3 }).ToArray();
     }
 
     /// <summary>
