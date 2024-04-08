@@ -1,14 +1,15 @@
-﻿using System.Text;
+﻿using System.Runtime.CompilerServices;
 using AngleSharp;
+using AngleSharp.Dom;
 using KoeBook.Epub.Models;
 using KoeBook.Epub.Services;
 using System.Runtime.CompilerServices;
 using System.Linq;
 
-namespace KoeBook.Test.Epub
+namespace KoeBook.Test.Epub;
+
+public class ScrapingAozoraServiceTest
 {
-    public class ScrapingAozoraServiceTest
-    {
         private static readonly EpubDocument EmptySingleParagraph = new EpubDocument("", "", "", Guid.NewGuid()) { Chapters = [new Chapter() { Sections = [new Section("") { Elements = [new Paragraph()] }] }] };
 
         public static object[][] TestCases()
@@ -35,67 +36,55 @@ namespace KoeBook.Test.Epub
             return builder.ToString();
         }
 
-        [Theory]
-        [MemberData(nameof(TestCases))]
-        public async void ProcessChildrenTest(string html, EpubDocument initial, EpubDocument expexted)
-        {
-            var config = Configuration.Default.WithDefaultLoader();
-            using var context = BrowsingContext.New(config);
-            var doc = await context.OpenAsync(request => request.Content(html));
-            var mainText = doc.QuerySelector(".main_text");
-            var scraper = new ScrapingAozoraService(new SplitBraceService(), new ScrapingClientService(new httpClientFactory(), TimeProvider.System));
-            scraper._document() = initial;
+    [Theory]
+    [InlineData("", "")]
+    public async Task TextProcess(string input, string expected)
+    {
+        using var context = BrowsingContext.New(Configuration.Default);
+        using var doc = await context.OpenAsync(req => req.Content(input));
+        Assert.NotNull(doc.ParentElement);
 
-            scraper.ProcessChildren(mainText, [""], "");
+        var result = ScrapingAozora.TextProcess(null, doc.ParentElement!);
 
-            Assert.True(HaveSmaeText(scraper._document(), expexted));
-        }
-
-        /// <summary>
-        /// 2つのEpubdocumentの内容(Guidを除く)内容が一致するかを判定する。
-        /// </summary>
-        /// <param name="document">比較するEpubdocument</param>
-        /// <param name="comparison">比較するEpubdocument</param>
-        /// <returns></returns>
-        private static bool HaveSmaeText(EpubDocument document, EpubDocument comparison)
-        {
-            bool same = true;
-
-            same = (document.Title == comparison.Title);
-            same = (document.Author == comparison.Author);
-            same = (document.CssClasses == comparison.CssClasses);
-
-            foreach ((Chapter selfChapter, Chapter comparisonChapter) in document.Chapters.Zip(comparison.Chapters))
-            {
-                same = (selfChapter.Title == comparisonChapter.Title);
-
-                foreach ((Section selfSection, Section comparisonSection) in selfChapter.Sections.Zip(comparisonChapter.Sections))
-                {
-                    same = (selfSection.Title == comparisonSection.Title);
-
-                    same = selfSection.Elements.Equals(comparisonSection.Elements);
-                }
-            }
-
-            return same;
-        }
+        Assert.Equal(expected, result);
     }
 
-    internal class httpClientFactory : IHttpClientFactory
+    [Theory]
+    [InlineData("", new[] { "" })]
+    public async Task AddParagraphs1(string input, string[] expected)
     {
-        public HttpClient CreateClient(string name)
+        using var context = BrowsingContext.New(Configuration.Default);
+        using var doc = await context.OpenAsync(req => req.Content(input));
+        Assert.NotNull(doc.ParentElement);
+        var epubDocument = new EpubDocument("title", "author", "", default)
         {
-            return httpClient;
-        }
+            Chapters = [new() { Sections = [new("section title") { Elements = [new Paragraph() { Text = "test" }] }] }]
+        };
 
-        private static readonly HttpClient httpClient = new HttpClient();
-
+        Assert.Equal(expected.Length, epubDocument.Chapters[0].Sections[0].Elements.Count);
+        Assert.All(epubDocument.Chapters[0].Sections[0].Elements.Zip(expected), v =>
+        {
+            var (element, expected) = v;
+            var paragraph = Assert.IsType<Paragraph>(element);
+            Assert.Equal(expected, paragraph.Text);
+        });
     }
 }
-file static class Proxy
-{
-    [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "_document")]
-    public static extern ref EpubDocument _document(this ScrapingAozoraService scraper);
 
-    
+file static class ScrapingAozora
+{
+    [UnsafeAccessor(UnsafeAccessorKind.StaticMethod)]
+    public static extern string TextProcess(ScrapingAozoraService? _, IElement element);
+
+    [UnsafeAccessor(UnsafeAccessorKind.Method)]
+    public static extern void AddParagraphs(ScrapingAozoraService service, List<KoeBook.Epub.Models.Element> focusElements, IElement element, bool lastEmpty);
+
+    [UnsafeAccessor(UnsafeAccessorKind.Method)]
+    public static extern void AddParagraphs(ScrapingAozoraService service, List<KoeBook.Epub.Models.Element> focusElements, string input, bool lastEmpty);
+
+    [UnsafeAccessor(UnsafeAccessorKind.StaticMethod)]
+    public static extern string TextReplace(ScrapingAozoraService? _, string text);
+
+    [UnsafeAccessor(UnsafeAccessorKind.StaticMethod)]
+    public static extern (List<int> contentsIds, bool hasChapter, bool hasSection) LoadToc(ScrapingAozoraService? _, IDocument doc, EpubDocument epubDocument);
 }

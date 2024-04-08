@@ -20,4 +20,9 @@ public static class EnumerableEx
             yield return (current, false, !hasNext);
         }
     }
+
+    public static void RemoveAt<T>(this List<T> list, Index index)
+    {
+        list.RemoveAt(index.GetOffset(list.Count));
+    }
 }
