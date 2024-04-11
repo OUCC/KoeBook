@@ -21,7 +21,7 @@ public class ScrapingAozoraServiceTest
         (string, EpubDocument, CssClass[], EpubDocument, CssClass[])[] patterns = [
             // レイアウト
             // 1.1 改丁
-            (@"<span class=""notes"">［＃改丁］</span>", EmptySingleParagraph, [], new EpubDocument("", "", "", Guid.NewGuid()) {  Chapters = [new Chapter() { Sections = [new Section("") { Elements = [new Paragraph() { Text = "［＃改丁］", ScriptLine = new Core.Models.ScriptLine("", "", "") }] }] }] }, []),
+            (@"<span class=""notes"">［＃改丁］</span>", EmptySingleParagraph, [], new EpubDocument("", "", "", Guid.NewGuid()) { Chapters = [new Chapter() { Sections = [new Section("") { Elements = [new Paragraph() { Text = "［＃改丁］", ScriptLine = new Core.Models.ScriptLine("", "", "") }] }] }] }, []),
         ];
 
         for (int i = 0; i < patterns.Length; i++)
@@ -67,7 +67,7 @@ public class ScrapingAozoraServiceTest
                 Assert.Equal(expectedSection.Title, actualSection.Title);
                 foreach ((var expectedElement, var actualElement) in expectedSection.Elements.Zip(actualSection.Elements))
                 {
-                    switch (expectedElement,  actualElement)
+                    switch (expectedElement, actualElement)
                     {
                         case (Paragraph expectedParagraph, Paragraph actualParagraph):
                             Assert.Equal(expectedParagraph.ClassName, actualParagraph.ClassName);

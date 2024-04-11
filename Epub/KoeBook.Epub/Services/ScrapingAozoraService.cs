@@ -456,14 +456,14 @@ namespace KoeBook.Epub.Services
         private SplittedLineBuilder ScriptLineLineBuilder = new SplittedLineBuilder();
 
 
-        
+
         /// <summary>
         /// ある要素のChildrenに応じた処理を行います。
         /// </summary>
         /// <param name="element">処理を行う要素</param>
         internal void ProcessChildren(IElement element)
         {
-            
+
         }
 
 
