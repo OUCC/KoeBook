@@ -12,12 +12,24 @@ public class ScrapingAozoraServiceTest
 
     public static object[][] ProcessChildrenTestCases()
     {
-        (string, EpubDocument, EpubDocument)[] cases = [
+        // string: 読み込むhtml。これをclass = "main_text"なdivタグで囲ってテストに投げる
+        // EpubDocument: ProcessChildren実行前のScrapingAozoraService._document。
+        // CssClass[]: ProcessChildren実行前のScrapingAozoraService._document.CssClassesに追加したいCssClassを列挙する。
+        // EpubDocument: ProcessChildren実行後にあるべき、ScrapingAozoraService._document。
+        // CssClass[]: ProcessChildren実行後にあるべきScrapingAozoraService._document.CssClassesに追加したいCssClassを列挙する。 
+
+        (string, EpubDocument, CssClass[], EpubDocument, CssClass[])[] patterns = [
             // レイアウト
             // 1.1 改丁
-            (@"<span class=""notes"">［＃改丁］</span>", EmptySingleParagraph , new EpubDocument("", "", "", Guid.NewGuid()) { Chapters = [new Chapter() { Sections = [new Section("") { Elements = [new Paragraph() { Text = "［＃改丁］", ScriptLine = new Core.Models.ScriptLine("", "", "") }] }] }] }),
+            (@"<span class=""notes"">［＃改丁］</span>", EmptySingleParagraph, [], new EpubDocument("", "", "", Guid.NewGuid()) {  Chapters = [new Chapter() { Sections = [new Section("") { Elements = [new Paragraph() { Text = "［＃改丁］", ScriptLine = new Core.Models.ScriptLine("", "", "") }] }] }] }, []),
         ];
-        return cases.Select(c => new object[] { ToMainText(c.Item1), c.Item2, c.Item3 }).ToArray();
+
+        for (int i = 0; i < patterns.Length; i++)
+        {
+            patterns[i].Item2.CssClasses.AddRange(patterns[i].Item3);
+            patterns[i].Item4.CssClasses.AddRange(patterns[i].Item5);
+        }
+        return patterns.Select(c => new object[] { ToMainText(c.Item1), c.Item2, c.Item4 }).ToArray();
     }
 
     /// <summary>
@@ -32,7 +44,7 @@ public class ScrapingAozoraServiceTest
 
     [Theory]
     [MemberData(nameof(ProcessChildrenTestCases))]
-    public async void ProcessChildrenTest(string html, EpubDocument initial, EpubDocument expexted)
+    public async void ProcessChildrenTest(string html, EpubDocument initial, EpubDocument expected)
     {
         var config = Configuration.Default.WithDefaultLoader();
         using var context = BrowsingContext.New(config);
@@ -43,55 +55,40 @@ public class ScrapingAozoraServiceTest
 
         scraper.ProcessChildren(mainText!);
 
-        Assert.True(HaveSmaeText(scraper._document(), expexted));
-    }
-
-    /// <summary>
-    /// 2つのEpubdocumentの内容(Guidを除く)内容が一致するかを判定する。
-    /// </summary>
-    /// <param name="document">比較するEpubdocument</param>
-    /// <param name="comparison">比較するEpubdocument</param>
-    /// <returns></returns>
-    private static bool HaveSmaeText(EpubDocument document, EpubDocument comparison)
-    {
-        bool same = true;
-
-        same = (document.Title == comparison.Title);
-        same = (document.Author == comparison.Author);
-        same = (document.CssClasses == comparison.CssClasses);
-        same = (document.Chapters.Count == comparison.Chapters.Count);
-
-        foreach ((Chapter selfChapter, Chapter comparisonChapter) in document.Chapters.Zip(comparison.Chapters))
+        var actual = scraper._document();
+        Assert.Equal(expected.Title, actual.Title);
+        Assert.Equal(expected.Author, actual.Author);
+        Assert.Equal(expected.CssClasses, actual.CssClasses);
+        foreach ((var expectedChapter, var actualChapter) in expected.Chapters.Zip(actual.Chapters))
         {
-            same = (selfChapter.Title == comparisonChapter.Title);
-            same = (selfChapter.Sections.Count == comparisonChapter.Sections.Count);
-
-            foreach ((Section selfSection, Section comparisonSection) in selfChapter.Sections.Zip(comparisonChapter.Sections))
+            Assert.Equal(expectedChapter.Title, actualChapter.Title);
+            foreach ((var expectedSection, var actualSection) in expectedChapter.Sections.Zip(actualChapter.Sections))
             {
-                same = (selfSection.Title == comparisonSection.Title);
-                same = (selfSection.Elements.Count == comparisonSection.Elements.Count);
-
-                foreach ((KoeBook.Epub.Models.Element selfElement, KoeBook.Epub.Models.Element comparisonElement) in selfSection.Elements.Zip(comparisonSection.Elements))
+                Assert.Equal(expectedSection.Title, actualSection.Title);
+                foreach ((var expectedElement, var actualElement) in expectedSection.Elements.Zip(actualSection.Elements))
                 {
-                    switch (selfElement, comparisonElement)
+                    switch (expectedElement,  actualElement)
                     {
-                        case (Paragraph selfParagraph, Paragraph comparisonParagraph):
-                            same = (selfParagraph.Text == comparisonParagraph.Text);
-                            same = (selfParagraph.ScriptLine?.Text == comparisonParagraph.ScriptLine?.Text);
+                        case (Paragraph expectedParagraph, Paragraph actualParagraph):
+                            Assert.Equal(expectedParagraph.ClassName, actualParagraph.ClassName);
+                            Assert.Equal(expectedParagraph.Text, actualParagraph.Text);
+                            Assert.NotNull(expectedParagraph.ScriptLine);
+                            Assert.NotNull(actualParagraph.ScriptLine);
+                            Assert.Equal(expectedParagraph.ScriptLine.Text, actualParagraph.ScriptLine.Text);
                             break;
-                        case (Picture selfPicture, Picture comparisonPicture):
-                            same = (selfPicture.PictureFilePath == comparisonPicture.PictureFilePath);
+                        case (Picture expectedPicture, Picture actualPicture):
+                            Assert.Equal(expectedPicture.ClassName, actualPicture.ClassName);
+                            Assert.Equal(expectedPicture.PictureFilePath, actualPicture.PictureFilePath);
                             break;
                         default:
-                            same = false;
+                            Assert.Fail();
                             break;
                     }
                 }
             }
         }
-
-        return same;
     }
+
 
     internal class httpClientFactory : IHttpClientFactory
     {
