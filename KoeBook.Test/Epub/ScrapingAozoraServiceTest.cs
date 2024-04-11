@@ -3,6 +3,7 @@ using AngleSharp;
 using AngleSharp.Dom;
 using KoeBook.Epub.Models;
 using KoeBook.Epub.Services;
+using KoeBook.Core.Models;
 
 namespace KoeBook.Test.Epub;
 
@@ -19,9 +20,14 @@ public class ScrapingAozoraServiceTest
         // CssClass[]: ProcessChildren実行後にあるべきScrapingAozoraService._document.CssClassesに追加したいCssClassを列挙する。 
 
         (string, EpubDocument, CssClass[], EpubDocument, CssClass[])[] patterns = [
-            // レイアウト
-            // 1.1 改丁
-            (@"<span class=""notes"">［＃改丁］</span>", EmptySingleParagraph, [], new EpubDocument("", "", "", Guid.NewGuid()) { Chapters = [new Chapter() { Sections = [new Section("") { Elements = [new Paragraph() { Text = "［＃改丁］", ScriptLine = new Core.Models.ScriptLine("", "", "") }] }] }] }, []),
+            // レイアウト1.1 改丁
+            (@"<span class=""notes"">［＃改丁］</span><br>", EmptySingleParagraph, [], new EpubDocument("", "", "", Guid.NewGuid()) { Chapters = [new Chapter() { Sections = [new Section("") { Elements = [new Paragraph() { Text = "［＃改丁］", ScriptLine = new ScriptLine("", "", "") }] }] }] }, []),
+            // レイアウト1.2 改ページ
+            (@"<span class=""notes"">［＃改ページ］</span><br>", EmptySingleParagraph, [], new EpubDocument("", "", "", Guid.NewGuid()) { Chapters = [new Chapter() { Sections = [new Section("") { Elements = [new Paragraph() { Text = "［＃改ページ］", ScriptLine = new ScriptLine("", "", "") }] }] }] }, []),
+            // レイアウト1.3 改見開き
+            (@"<span class=""notes"">［＃改見開き］</span><br>", EmptySingleParagraph, [], new EpubDocument("", "", "", Guid.NewGuid()) { Chapters = [new Chapter() { Sections = [new Section("") { Elements = [new Paragraph() { Text = "［＃改見開き］", ScriptLine = new ScriptLine("", "", "") }] }] }] }, []),
+            // レイアウト1.4 改段
+            (@"<span class=""notes"">［＃改段］</span><br />", EmptySingleParagraph, [], new EpubDocument("", "", "", Guid.NewGuid()) { Chapters = [new Chapter() { Sections = [new Section("") { Elements = [new Paragraph() { Text = "［＃改段］", ScriptLine = new ScriptLine("", "", "") }] }] }] }, []),
         ];
 
         for (int i = 0; i < patterns.Length; i++)
