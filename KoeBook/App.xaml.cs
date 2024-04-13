@@ -6,7 +6,6 @@ using KoeBook.Core;
 using KoeBook.Core.Contracts.Services;
 using KoeBook.Core.Services;
 using KoeBook.Core.Services.Mocks;
-using KoeBook.Epub;
 using KoeBook.Epub.Contracts.Services;
 using KoeBook.Epub.Services;
 using KoeBook.Models;
@@ -99,7 +98,8 @@ public partial class App : Application
                 services.AddSingleton<IEpubGenerateService, EpubGenerateService>();
                 services.AddSingleton<IEpubDocumentStoreService, EpubDocumentStoreService>();
                 services.AddSingleton<IAnalyzerService, AnalyzerService>();
-                services.AddSingleton<ILlmAnalyzerService, ChatGptAnalyzerService>();
+                services.AddSingleton<ILlmAnalyzerService, ClaudeAnalyzerService>();
+                services.AddSingleton<IClaudeService, ClaudeService>();
                 services.AddSingleton<OpenAI.Interfaces.IOpenAIService, MyOpenAiService>();
 
                 // Epub Services

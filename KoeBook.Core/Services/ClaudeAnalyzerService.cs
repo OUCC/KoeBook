@@ -4,10 +4,11 @@ using KoeBook.Core.Models;
 
 namespace KoeBook.Core.Services;
 
-public partial class ClaudeAnalyzerService(IClaudeService claudeService, IDisplayStateChangeService displayStateChangeService) : ILlmAnalyzerService
+public partial class ClaudeAnalyzerService(IClaudeService claudeService, IDisplayStateChangeService displayStateChangeService, ISoundGenerationSelectorService soundGenerationSelectorService) : ILlmAnalyzerService
 {
     private readonly IClaudeService _claudeService = claudeService;
     private readonly IDisplayStateChangeService _displayStateChangeService = displayStateChangeService;
+    private readonly ISoundGenerationSelectorService _soundGenerationSelectorService = soundGenerationSelectorService;
 
     public async ValueTask<BookScripts> LlmAnalyzeScriptLinesAsync(BookProperties bookProperties, List<ScriptLine> scriptLines, CancellationToken cancellationToken)
     {
@@ -30,7 +31,7 @@ public partial class ClaudeAnalyzerService(IClaudeService claudeService, IDispla
             },
                 cancellationToken: cancellationToken
             );
-            var (characterList, voiceIds) = ExtractCharacterListAndVoiceIds(message1.ToString());
+            var characterList = ExtractCharacterList(message1.ToString());
 
             var message2 = await _claudeService.Messages.CreateAsync(new()
             {
@@ -39,13 +40,13 @@ public partial class ClaudeAnalyzerService(IClaudeService claudeService, IDispla
                 Messages = [new()
                 {
                     Role = "user",
-                    Content = CreatePrompt2(characterList, voiceIds)
+                    Content = CreatePrompt2(characterList)
                 }]
             },
                 cancellationToken: cancellationToken
             );
 
-            var characterVoiceMapping = ExtractCharacterVoiceMapping(message2.ToString());
+            var characterVoiceMapping = ExtractCharacterVoiceMapping(message2.ToString(), characterList);
 
             return new(bookProperties, new(characterVoiceMapping)) { ScriptLines = scriptLines };
         }
@@ -59,9 +60,39 @@ public partial class ClaudeAnalyzerService(IClaudeService claudeService, IDispla
         }
     }
 
-    private Dictionary<string, string> ExtractCharacterVoiceMapping(string response)
+    private Dictionary<string, string> ExtractCharacterVoiceMapping(string response, List<Character> characterList)
     {
-        throw new NotImplementedException();
+        var characterVoiceMapping = new Dictionary<string, string>();
+        var lines = response.Split("\n");
+        var characterListStartIndex = 0;
+        for (var i = 0; i < lines.Length; i++)
+        {
+            if (lines[i].StartsWith("[Assign Voices]"))
+            {
+                characterListStartIndex = i + 1;
+            }
+        }
+
+        for (var i = characterListStartIndex; i < lines.Length; i++)
+        {
+            var line = lines[i];
+            if (line.StartsWith('c'))
+            {
+                var characterId = line[1..line.IndexOf('.')];
+                var voiceType = line[(line.IndexOf(':') + 2)..];
+                // voiceTypeが_soundGenerationSelectorService.Modelsに含まれているかチェック
+                if (_soundGenerationSelectorService.Models.Any(x => x.Name == voiceType))
+                {
+                    characterVoiceMapping.Add(characterId, voiceType);
+                }
+                else
+                {
+                    characterVoiceMapping.Add(characterId, string.Empty);
+                }
+            }
+        }
+
+        return characterVoiceMapping;
     }
 
     private static string CreatePrompt1(string lineNumberingText)
@@ -79,9 +110,9 @@ public partial class ClaudeAnalyzerService(IClaudeService claudeService, IDispla
                 - Revise CHARACTER LIST and VOICE ID (in the event that the CHARACTER LIST is incomplete)
                 Output Format:
                 [CHARACTER LIST]
-                c0. ナレーター: The person who speaks the narration parts. A calm-toned male voice.
-                c1. {character_name}: {character_description}
-                {character_id}. {character_name}: {character_description}
+                c0. ナレーター: {character_and_voice_description, example:"The person who speaks the narration parts. A calm-toned male voice."}
+                c1. {character_name}: {character_and_voice_description}
+                {character_id}. {character_name}: {character_and_voice_description}
                 ...
                 [VOICE ID]
                 1. {character_id} {narration|dialogue}
@@ -89,9 +120,9 @@ public partial class ClaudeAnalyzerService(IClaudeService claudeService, IDispla
                 3. {character_id} {narration|dialogue}
                 ...
                 [REVISE CHARACTER LIST]
-                c0. ナレーター: The person who speaks the narration parts. A calm-toned male voice.
-                c1. {character_name}: {character_description}
-                {character_id}. {character_name}: {character_description}
+                c0. ナレーター: {character_and_voice_description}
+                c1. {character_name}: {character_and_voice_description}
+                {character_id}. {character_name}: {character_and_voice_description}
                 ...
                 [REVISE VOICE ID]
                 1. {character_id} {narration|dialogue}
@@ -101,9 +132,34 @@ public partial class ClaudeAnalyzerService(IClaudeService claudeService, IDispla
                 """;
     }
 
-    private static string CreatePrompt2(List<Character> characterList, List<string> voiceIds)
+    private string CreatePrompt2(List<Character> characterList)
     {
-        throw new NotImplementedException();
+        StringBuilder sb = new StringBuilder();
+        foreach (var character in characterList)
+        {
+            sb.AppendLine($"c{character.Id}. {character.Name}: {character.Description}");
+        }
+
+        StringBuilder sb2 = new StringBuilder();
+        foreach (var voiceType in _soundGenerationSelectorService.Models)
+        {
+            sb2.Append($"{voiceType.Name},");
+        }
+
+        return $$"""
+            Assign the most fitting voice type to each character from the provided list, ensuring the chosen voice aligns with their role and attributes in the story. Only select from the available voice types.
+
+            Characters:
+            {{sb}}
+
+            Voice Types:
+            {{sb2}}
+
+            Output Format:
+            [Assign Voices]
+            c0. {character_name}: {voice_type}
+            c1. {character_name}: {voice_type}
+            """;
     }
 
     private static string LineNumbering(List<ScriptLine> scriptLines)
@@ -116,10 +172,9 @@ public partial class ClaudeAnalyzerService(IClaudeService claudeService, IDispla
         return sb.ToString();
     }
 
-    private static (List<Character>, List<string>) ExtractCharacterListAndVoiceIds(string response)
+    private static List<Character> ExtractCharacterList(string response)
     {
         var characterList = new List<Character>();
-        var voiceIds = new List<string>();
         var lines = response.Split("\n");
         var characterListStartIndex = 0;
         var characterListEndIndex = 0;
@@ -161,8 +216,20 @@ public partial class ClaudeAnalyzerService(IClaudeService claudeService, IDispla
                 }
             }
         }
-        return (characterList, voiceIds);
+        return characterList;
     }
 
-    private record Character(string Id, string Name, string Description);
+    private class Character
+    {
+        public string Id { get; }
+        public string Name { get; }
+        public string Description { get; }
+        public string VoiceType { get; set; } = string.Empty;
+        public Character(string id, string name, string description)
+        {
+            Id = id;
+            Name = name;
+            Description = description;
+        }
+    }
 }
