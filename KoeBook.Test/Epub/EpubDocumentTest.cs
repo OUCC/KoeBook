@@ -89,7 +89,7 @@ public class EpubDocumentTest
         var element = Assert.Single(section.Elements);
         var paragraph = Assert.IsType<Paragraph>(element);
         Assert.Null(paragraph.Audio);
-        Assert.Null(paragraph.Text);
+        Assert.Empty(paragraph.Text);
         Assert.Null(paragraph.ClassName);
 
         // 空でないときは無視
@@ -129,7 +129,7 @@ public class EpubDocumentTest
         element = Assert.Single(document.Chapters[0].Sections[1].Elements);
         paragraph = Assert.IsType<Paragraph>(element);
         Assert.Null(paragraph.Audio);
-        Assert.Null(paragraph.Text);
+        Assert.Empty(paragraph.Text);
         Assert.Null(paragraph.ClassName);
 
         // インデックスは正しく指定する必要がある

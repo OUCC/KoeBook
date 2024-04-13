@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Runtime.Serialization;
+using FastEnumUtility;
 
 namespace KoeBook.Core;
 
@@ -13,7 +14,7 @@ public class EbookException : Exception
 
     public EbookException(ExceptionType exceptionType, string? message = null, Exception? innerException = null) : base(null, innerException)
     {
-        Message = message;
+        Message = message ?? exceptionType.GetEnumMemberValue();
         ExceptionType = exceptionType;
     }
 
@@ -60,5 +61,11 @@ public enum ExceptionType
     UnexpectedStructure,
 
     [EnumMember(Value = "HTTPリクエストエラー")]
-    HttpResponseError
+    HttpResponseError,
+
+    /// <summary>
+    /// 無効なURLです
+    /// </summary>
+    [EnumMember(Value = "無効なURLです")]
+    InvalidUrl,
 }

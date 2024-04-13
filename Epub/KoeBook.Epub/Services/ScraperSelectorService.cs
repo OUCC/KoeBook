@@ -8,6 +8,19 @@ public class ScraperSelectorService(IEnumerable<IScrapingService> scrapingServic
 {
     private readonly ImmutableArray<IScrapingService> _scrapingServices = scrapingServices.ToImmutableArray();
 
+    public bool IsMatchSites(string url)
+    {
+        try
+        {
+            var uri = new Uri(url);
+            return _scrapingServices.Any(service => service.IsMatchSite(uri));
+        }
+        catch (UriFormatException)
+        {
+            return false;
+        }
+    }
+
     public async ValueTask<EpubDocument> ScrapingAsync(string url, string coverFillePath, string tempDirectory, Guid id, CancellationToken ct)
     {
         var uri = new Uri(url);

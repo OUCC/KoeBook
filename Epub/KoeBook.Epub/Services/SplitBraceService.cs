@@ -1,11 +1,20 @@
-﻿namespace KoeBook.Epub.Utility;
+﻿using KoeBook.Epub.Contracts.Services;
 
-public static class ScrapingHelper
+namespace KoeBook.Epub.Services;
+
+public class SplitBraceService : ISplitBraceService
 {
-    public static List<string> SplitBrace(string text)
+    public IEnumerable<string> SplitBrace(string text)
     {
-        if (text.Length == 1 && (text == "「" || text == "『" || text == "」" || text == "』"))
-            return [text];
+        // textが空白だった時 paragraph を挿入する処理をスキップ
+        if (string.IsNullOrWhiteSpace(text))
+            yield break;
+
+        if (text.Length == 1)
+        {
+            yield return text;
+            yield break;
+        }
 
         var bracket = 0;
         var brackets = new int[text.Length];
@@ -17,7 +26,6 @@ public static class ScrapingHelper
             brackets[i] = bracket;
         }
 
-        var result = new List<string>();
         var mn = Math.Min(0, brackets.Min());
         var startIdx = 0;
         for (var i = 0; i < brackets.Length; i++)
@@ -25,20 +33,26 @@ public static class ScrapingHelper
             brackets[i] -= mn;
             if ((text[i] == '「' || text[i] == '『') && brackets[i] == 1 && i != 0 && startIdx != i)
             {
-                result.Add(text[startIdx..i]);
+                yield return text[startIdx..i];
                 startIdx = i;
             }
             if ((text[i] == '」' || text[i] == '』') && brackets[i] == 0)
             {
-                result.Add(text[startIdx..(i + 1)]);
+                yield return text[startIdx..(i + 1)];
                 startIdx = i + 1;
             }
         }
         if (startIdx != text.Length)
         {
-            result.Add(text[startIdx..]);
+            yield return text[startIdx..];
         }
+    }
 
-        return result;
+    /// <summary>
+    /// 複数の文字列を分割して平坦化します。
+    /// </summary>
+    public IEnumerable<string> SplitBrace(IEnumerable<string> texts)
+    {
+        return texts.SelectMany(SplitBrace);
     }
 }
