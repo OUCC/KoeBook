@@ -15,13 +15,13 @@ public class EpubDocument(string title, string author, string coverFilePath, Gui
 
     public List<CssClass> CssClasses { get; set; } = [
         new CssClass("-epub-media-overlay-active", """
-            .-epub-media-overlay-active *{
-                background-color: yellow;
-                color: black !important;
+            .-epub-media-overlay-active, .-epub-media-overlay-active * {
+            	background-color: yellow;
+            	color: black !important;
             }
             """),
         new CssClass("-epub-media-overlay-unactive", """
-            .-epub-media-overlay-unactive * {
+            html.-epub-media-overlay-unactive * {
                 color: gray;
             }
             """),
