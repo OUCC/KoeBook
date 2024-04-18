@@ -25,6 +25,12 @@
                     </TabViewItem.IconSource>
                     <local:MainPage x:Name="MainPage" Margin="20,10,20,10"/>
                 </TabViewItem>
+                <TabViewItem
+                    x:Name="CreateStoryPageTab"
+                    IsClosable="False"
+                    Header="作成">
+                    <local:CreateStoryPage Margin="20,10,20,10" />
+                </TabViewItem>
             </TabView.TabItems>
             <TabView.TabStripHeader>
                 <Button
