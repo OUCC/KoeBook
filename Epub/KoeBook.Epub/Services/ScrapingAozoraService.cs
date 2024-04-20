@@ -19,9 +19,6 @@ namespace KoeBook.Epub.Services
         private readonly ISplitBraceService _splitBraceService = splitBraceService;
         private readonly IScrapingClientService _scrapingClientService = scrapingClientService;
 
-        private EpubDocument? _document;
-
-
         public bool IsMatchSite(Uri uri)
         {
             return uri.Host == "www.aozora.gr.jp";
@@ -455,15 +452,63 @@ namespace KoeBook.Epub.Services
         private SplittedLineBuilder ParagraphLineBuilder = new SplittedLineBuilder();
         private SplittedLineBuilder ScriptLineLineBuilder = new SplittedLineBuilder();
 
-
+        private int HeadingId = 0;
+        private Dictionary<string, (int min, int max)> Classes = new Dictionary<string, (int, int)>();
 
         /// <summary>
         /// ある要素のChildrenに応じた処理を行います。
         /// </summary>
+        /// <param name="document">追加処理を行う対象となるEpubDocument</param>
         /// <param name="element">処理を行う要素</param>
-        internal void ProcessChildren(IElement element)
+        /// <param name="classes">適用される class のリスト</param>
+        internal void ProcessChildren(EpubDocument document, IElement element, string classes)
         {
 
+        }
+
+        /// <summary>
+        /// <see cref="Classes"/>に基づき、EpubDocument内で使用するクラスを生成する。
+        /// </summary>
+        /// <param name="document"><see cref="CssClass"/>を変更するEpubDocument</param>
+        void AddCssClasses(EpubDocument document)
+        {
+            var classNames = new string[] { "jisage", "text_indent", "chitsuki" };
+
+            (int min, int max) value = (0, 0);
+            if (Classes.TryGetValue("jisage", out value))
+            {
+                for (int i = value.min; i <= value.max; i++)
+                {
+                    document.CssClasses.Add(new CssClass("jisage", $@"
+                    .jisage_{i} {{
+                        margin-left: {i}em;
+                    }}
+                    "));
+                }
+            }
+            if (Classes.TryGetValue("text_indent", out value))
+            {
+                for (int i = value.min; i <= value.max; i++)
+                {
+                    document.CssClasses.Add(new CssClass("text_indent", $@"
+                    .text_indent_{i} {{
+                    text-indent: {i}em;
+                    }}
+                    "));
+                }
+            }
+            if (Classes.TryGetValue("chitsuki", out value))
+            {
+                for (int i = value.min; i <= value.max; i++)
+                {
+                    document.CssClasses.Add(new CssClass("chitsuki", $@"
+                    .chitsuki_{i} {{
+                        text-align: right;
+                        margin-right: {i}em;
+                    }}
+                    "));
+                }
+            }
         }
 
 

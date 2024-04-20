@@ -11,33 +11,6 @@ public class ScrapingAozoraServiceTest
 {
     private static readonly EpubDocument EmptySingleParagraph = new EpubDocument("", "", "", Guid.NewGuid()) { Chapters = [new Chapter() { Sections = [new Section("") { Elements = [new Paragraph()] }] }] };
 
-    public static object[][] ProcessChildrenTestCases()
-    {
-        // string: 読み込むhtml。これをclass = "main_text"なdivタグで囲ってテストに投げる
-        // EpubDocument: ProcessChildren実行前のScrapingAozoraService._document。
-        // CssClass[]: ProcessChildren実行前のScrapingAozoraService._document.CssClassesに追加したいCssClassを列挙する。
-        // EpubDocument: ProcessChildren実行後にあるべき、ScrapingAozoraService._document。
-        // CssClass[]: ProcessChildren実行後にあるべきScrapingAozoraService._document.CssClassesに追加したいCssClassを列挙する。 
-
-        (string, EpubDocument, CssClass[], EpubDocument, CssClass[])[] patterns = [
-            // レイアウト1.1 改丁
-            (@"<span class=""notes"">［＃改丁］</span><br>", EmptySingleParagraph, [], new EpubDocument("", "", "", Guid.NewGuid()) { Chapters = [new Chapter() { Sections = [new Section("") { Elements = [new Paragraph() { Text = "［＃改丁］", ScriptLine = new ScriptLine("", "", "") }] }] }] }, []),
-            // レイアウト1.2 改ページ
-            (@"<span class=""notes"">［＃改ページ］</span><br>", EmptySingleParagraph, [], new EpubDocument("", "", "", Guid.NewGuid()) { Chapters = [new Chapter() { Sections = [new Section("") { Elements = [new Paragraph() { Text = "［＃改ページ］", ScriptLine = new ScriptLine("", "", "") }] }] }] }, []),
-            // レイアウト1.3 改見開き
-            (@"<span class=""notes"">［＃改見開き］</span><br>", EmptySingleParagraph, [], new EpubDocument("", "", "", Guid.NewGuid()) { Chapters = [new Chapter() { Sections = [new Section("") { Elements = [new Paragraph() { Text = "［＃改見開き］", ScriptLine = new ScriptLine("", "", "") }] }] }] }, []),
-            // レイアウト1.4 改段
-            (@"<span class=""notes"">［＃改段］</span><br />", EmptySingleParagraph, [], new EpubDocument("", "", "", Guid.NewGuid()) { Chapters = [new Chapter() { Sections = [new Section("") { Elements = [new Paragraph() { Text = "［＃改段］", ScriptLine = new ScriptLine("", "", "") }] }] }] }, []),
-        ];
-
-        for (int i = 0; i < patterns.Length; i++)
-        {
-            patterns[i].Item2.CssClasses.AddRange(patterns[i].Item3);
-            patterns[i].Item4.CssClasses.AddRange(patterns[i].Item5);
-        }
-        return patterns.Select(c => new object[] { ToMainText(c.Item1), c.Item2, c.Item4 }).ToArray();
-    }
-
     /// <summary>
     /// (htmlの要素の)テキストを"<div class = \"main_text\"></div>"で囲む
     /// </summary>
@@ -48,53 +21,110 @@ public class ScrapingAozoraServiceTest
         return @$"<div class = ""main_text"">{text}</div>";
     }
 
+    public static object[][] ProcessChildrenlayout1TestCases()
+    {
+        (string, Paragraph)[] cases = [
+            // レイアウト1.1 改丁
+            (@"<span class=""notes"">［＃改丁］</span><br>", new Paragraph() { Text = "［＃改丁］", ScriptLine = new ScriptLine("", "", "") }),
+            // レイアウト1.2 改ページ
+            (@"<span class=""notes"">［＃改ページ］</span><br>", new Paragraph() { Text = "［＃改ページ］", ScriptLine = new ScriptLine("", "", "") }),
+            // レイアウト1.3 改見開き
+            (@"<span class=""notes"">［＃改見開き］</span><br>", new Paragraph() { Text = "［＃改見開き］", ScriptLine = new ScriptLine("", "", "") }),
+            // レイアウト1.4 改段
+            (@"<span class=""notes"">［＃改段］</span><br />", new Paragraph() { Text = "［＃改段］", ScriptLine = new ScriptLine("", "", "") }),
+        ];
+        return cases.Select(c => new object[] { ToMainText(c.Item1), c.Item2 }).ToArray();
+    }
+
     [Theory]
-    [MemberData(nameof(ProcessChildrenTestCases))]
-    public async void ProcessChildrenTest(string html, EpubDocument initial, EpubDocument expected)
+    [MemberData(nameof(ProcessChildrenlayout1TestCases))]
+    public async void ProcessChildrenlayout1Test(string html, Paragraph expected)
     {
         var config = Configuration.Default.WithDefaultLoader();
         using var context = BrowsingContext.New(config);
         var doc = await context.OpenAsync(request => request.Content(html));
         var mainText = doc.QuerySelector(".main_text");
+        if (mainText == null)
+            Assert.Fail();
         var scraper = new ScrapingAozoraService(new SplitBraceService(), new ScrapingClientService(new httpClientFactory(), TimeProvider.System));
-        scraper._document() = initial;
+        var document = EmptySingleParagraph;
 
-        scraper.ProcessChildren(mainText!);
+        scraper.ProcessChildren(document, mainText, "");
 
-        var actual = scraper._document();
-        Assert.Equal(expected.Title, actual.Title);
-        Assert.Equal(expected.Author, actual.Author);
-        Assert.Equal(expected.CssClasses, actual.CssClasses);
-        foreach ((var expectedChapter, var actualChapter) in expected.Chapters.Zip(actual.Chapters))
+        Assert.Single(document.Chapters);
+        Assert.Single(document.Chapters[^1].Sections);
+        Assert.Single(document.Chapters[^1].Sections);
+        Assert.IsType<Paragraph>(document.Chapters[^1].Sections[^1].Elements[^1]);
+        if (document.Chapters[^1].Sections[^1].Elements[^1] is Paragraph paragraph)
         {
-            Assert.Equal(expectedChapter.Title, actualChapter.Title);
-            foreach ((var expectedSection, var actualSection) in expectedChapter.Sections.Zip(actualChapter.Sections))
-            {
-                Assert.Equal(expectedSection.Title, actualSection.Title);
-                foreach ((var expectedElement, var actualElement) in expectedSection.Elements.Zip(actualSection.Elements))
-                {
-                    switch (expectedElement, actualElement)
-                    {
-                        case (Paragraph expectedParagraph, Paragraph actualParagraph):
-                            Assert.Equal(expectedParagraph.ClassName, actualParagraph.ClassName);
-                            Assert.Equal(expectedParagraph.Text, actualParagraph.Text);
-                            Assert.NotNull(expectedParagraph.ScriptLine);
-                            Assert.NotNull(actualParagraph.ScriptLine);
-                            Assert.Equal(expectedParagraph.ScriptLine.Text, actualParagraph.ScriptLine.Text);
-                            break;
-                        case (Picture expectedPicture, Picture actualPicture):
-                            Assert.Equal(expectedPicture.ClassName, actualPicture.ClassName);
-                            Assert.Equal(expectedPicture.PictureFilePath, actualPicture.PictureFilePath);
-                            break;
-                        default:
-                            Assert.Fail();
-                            break;
-                    }
-                }
-            }
+            Assert.Equal(expected.Text, paragraph.Text);
+            Assert.Equal(expected.ClassName, paragraph.ClassName);
+            Assert.NotNull(paragraph.ScriptLine);
+            Assert.Equal(expected.ScriptLine?.Text, paragraph.ScriptLine.Text);
         }
     }
 
+    // Classes の各 value は、対応するclass で、ソースに出てきたものの内、最大のものの値をほじするようにする。
+    public static object[][] ProcessChildrenlayout2TestCases()
+    {
+        (string, Paragraph[], (string, (int, int))[])[] cases = [
+            // レイアウト2.1 1行だけの字下げ
+            (@"<div class=""jisage_3"" style=""margin-left: 3em"">text<br /></div><br>", [new Paragraph() { Text = "text", ClassName = "jisage_3", ScriptLine = new ScriptLine("text", "", "") }], [("jisage", (1, 3))]),
+            // レイアウト2.2 ブロックでの字下げ
+            (@"<div class=""jisage_3"" style=""margin-left: 3em"">text1<br />text2<br /></div><br>", [new Paragraph() { Text = "text1", ClassName = "jisage_3", ScriptLine = new ScriptLine("text1", "", "") }, new Paragraph() { Text = "text2", ClassName = "jisage_3", ScriptLine = new ScriptLine("text2", "", "") },], [("jisage", (1, 3))]),
+            // レイアウト2.3 凹凸の複雑な字下げ
+            (@"<div class=""burasage"" style=""margin-left: 3em; text_indent: -1em;"">Long Text</div>", [new Paragraph() { Text = "Long Text", ClassName = "jisage_3 text_indent_-1" }], [("jisage", (1, 3)), ("text_indent", (-1, 0))]),
+            // レイアウト2.4 は特定の書き方について述べていないので省略。
+            // レイアウト2.5 地付き
+            (@"<div class=""chitsuki_0"" style=""text-align:right; margin-right: 0em"">text</div>", [new Paragraph() { Text = "text", ClassName = "chitsuki_0", ScriptLine = new ScriptLine("text", "", "") }], [("chitsuki", (0, 0))]),
+
+
+            // </div>の後の<br />がないパターン
+            (@"<div class=""jisage_3"" style=""margin-left: 3em"">text<br /></div>", [new Paragraph() { Text = "text", ClassName = "jisage_3", ScriptLine = new ScriptLine("text", "", "") }], [("jisage", (1, 3))]),
+            // </div>の前の<br />がないパターン
+            (@"<div class=""burasage"" style=""margin-left: 1em; text_indent: -1em;"">text</div>", [new Paragraph() { Text = "text", ClassName = "jisage_3 text_indent_-1", ScriptLine = new ScriptLine("text", "", "") }], [("jisage", (1, 3)), ("text_indent", (-1, 0))]),
+
+        ];
+        return cases.Select(c => new object[] { ToMainText(c.Item1), c.Item2, c.Item3 }).ToArray();
+    }
+
+    [Theory]
+    [MemberData(nameof(ProcessChildrenlayout2TestCases))]
+    public async void ProcessChildrenlayout2Test(string html, IReadOnlyCollection<Paragraph> expectedParagraphs, IEnumerable<(string, (int min, int max))> expectedDictionary)
+    {
+        var config = Configuration.Default.WithDefaultLoader();
+        using var context = BrowsingContext.New(config);
+        var doc = await context.OpenAsync(request => request.Content(html));
+        var mainText = doc.QuerySelector(".main_text");
+        if (mainText == null)
+            Assert.Fail();
+        var scraper = new ScrapingAozoraService(new SplitBraceService(), new ScrapingClientService(new httpClientFactory(), TimeProvider.System));
+        var document = EmptySingleParagraph;
+
+        scraper.ProcessChildren(document, mainText, "");
+
+        Assert.Single(document.Chapters);
+        Assert.Single(document.Chapters[^1].Sections);
+        Assert.Equal(expectedParagraphs.Count, document.Chapters[^1].Sections[^1].Elements.Count);
+        foreach ((var expectedParagraph, var actualElement) in expectedParagraphs.Zip(document.Chapters[^1].Sections[^1].Elements))
+        {
+            Assert.IsType<Paragraph>(actualElement);
+            if (actualElement is Paragraph actualParagraph)
+            {
+                Assert.Equal(expectedParagraph.Text, actualParagraph.Text);
+                Assert.Equal(expectedParagraph.ClassName, actualParagraph.ClassName);
+                Assert.NotNull(actualParagraph.ScriptLine);
+                Assert.Equal(expectedParagraph.ScriptLine?.Text, actualParagraph.ScriptLine.Text);
+            }
+            // ScrapingAozoraService.Classes の確認
+            foreach ((var key, var exceptedValue) in expectedDictionary)
+            {
+                Assert.True(scraper._Classes().ContainsKey(key));
+                Assert.True(scraper._Classes()[key].min <= exceptedValue.min);
+                Assert.True(scraper._Classes()[key].max >= exceptedValue.max);
+            }
+        }
+    }
 
     internal class httpClientFactory : IHttpClientFactory
     {
@@ -160,6 +190,6 @@ file static class ScrapingAozora
     [UnsafeAccessor(UnsafeAccessorKind.StaticMethod)]
     public static extern (List<int> contentsIds, bool hasChapter, bool hasSection) LoadToc(ScrapingAozoraService? _, IDocument doc, EpubDocument epubDocument);
 
-    [UnsafeAccessor(UnsafeAccessorKind.Field)]
-    public static extern ref EpubDocument _document(this ScrapingAozoraService scraper);
+    [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "Classes")]
+    public static extern Dictionary<string, (int min, int max)> _Classes(this ScrapingAozoraService scraper);
 }
