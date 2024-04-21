@@ -4,13 +4,22 @@ using AngleSharp.Dom;
 using KoeBook.Epub.Models;
 using KoeBook.Epub.Services;
 using KoeBook.Core.Models;
+using Microsoft.Extensions.DependencyInjection;
+using KoeBook.Epub.Contracts.Services;
 
 namespace KoeBook.Test.Epub;
 
-public class ScrapingAozoraServiceTest
+public class ScrapingAozoraServiceTest : DiTestBase
 {
-    private static readonly EpubDocument EmptySingleParagraph = new EpubDocument("", "", "", Guid.NewGuid()) { Chapters = [new Chapter() { Sections = [new Section("") { Elements = [new Paragraph()] }] }] };
+    private readonly ScrapingAozoraService _scrapingAozoraService;
 
+    public ScrapingAozoraServiceTest()
+    {
+        _scrapingAozoraService = Host.Services
+            .GetServices<IScrapingService>()
+            .OfType<ScrapingAozoraService>()
+            .Single();
+    }
     /// <summary>
     /// (htmlの要素の)テキストを"<div class = \"main_text\"></div>"で囲む
     /// </summary>
@@ -46,10 +55,9 @@ public class ScrapingAozoraServiceTest
         var mainText = doc.QuerySelector(".main_text");
         if (mainText == null)
             Assert.Fail();
-        var scraper = new ScrapingAozoraService(new SplitBraceService(), new ScrapingClientService(new httpClientFactory(), TimeProvider.System));
         var document = EmptySingleParagraph;
 
-        scraper.ProcessChildren(document, mainText, "");
+        _scrapingAozoraService.ProcessChildren(document, mainText, "");
 
         Assert.Single(document.Chapters);
         Assert.Single(document.Chapters[^1].Sections);
@@ -98,10 +106,10 @@ public class ScrapingAozoraServiceTest
         var mainText = doc.QuerySelector(".main_text");
         if (mainText == null)
             Assert.Fail();
-        var scraper = new ScrapingAozoraService(new SplitBraceService(), new ScrapingClientService(new httpClientFactory(), TimeProvider.System));
         var document = EmptySingleParagraph;
+        _scrapingAozoraService._Classes().Clear();
 
-        scraper.ProcessChildren(document, mainText, "");
+        _scrapingAozoraService.ProcessChildren(document, mainText, "");
 
         Assert.Single(document.Chapters);
         Assert.Single(document.Chapters[^1].Sections);
@@ -119,9 +127,9 @@ public class ScrapingAozoraServiceTest
             // ScrapingAozoraService.Classes の確認
             foreach ((var key, var exceptedValue) in expectedDictionary)
             {
-                Assert.True(scraper._Classes().ContainsKey(key));
-                Assert.True(scraper._Classes()[key].min <= exceptedValue.min);
-                Assert.True(scraper._Classes()[key].max >= exceptedValue.max);
+                Assert.True(_scrapingAozoraService._Classes().ContainsKey(key));
+                Assert.True(_scrapingAozoraService._Classes()[key].min <= exceptedValue.min);
+                Assert.True(_scrapingAozoraService._Classes()[key].max >= exceptedValue.max);
             }
         }
     }
