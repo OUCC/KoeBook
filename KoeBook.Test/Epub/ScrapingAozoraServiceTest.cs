@@ -108,7 +108,7 @@ public class ScrapingAozoraServiceTest : DiTestBase
         var chapter = Assert.Single(document.Chapters);
         var section = Assert.Single(chapter.Sections);
         Assert.Equal(expectedParagraphs.Count, document.Chapters[^1].Sections[^1].Elements.Count);
-        Assert.All(expectedParagraphs.Zip(document.Chapters[^1].Sections[^1].Elements),  v =>
+        Assert.All(expectedParagraphs.Zip(document.Chapters[^1].Sections[^1].Elements), v =>
         {
             var actualParagraph = Assert.IsType<Paragraph>(v.Second);
             Assert.Equal(v.First.Text, actualParagraph.Text);
