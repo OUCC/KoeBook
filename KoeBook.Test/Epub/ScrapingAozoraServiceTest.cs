@@ -104,7 +104,7 @@ public class ScrapingAozoraServiceTest : DiTestBase
 
     [Theory]
     [MemberData(nameof(ProcessChildrenlayout2TestCases))]
-    public async void ProcessChildrenlayout2Test(string html, IReadOnlyCollection<Paragraph> expectedParagraphs, IEnumerable<(string, (int min, int max))> expectedDictionary)
+    public async void ProcessChildrenlayout2Test(string html, IReadOnlyCollection<Paragraph> expectedParagraphs, IEnumerable<(string key, (int min, int max) value)> expectedDictionary)
     {
         var config = Configuration.Default.WithDefaultLoader();
         using var context = BrowsingContext.New(config);
@@ -117,27 +117,24 @@ public class ScrapingAozoraServiceTest : DiTestBase
 
         _scrapingAozoraService.ProcessChildren(document, mainText, "");
 
-        Assert.Single(document.Chapters);
-        Assert.Single(document.Chapters[^1].Sections);
+        var chapter = Assert.Single(document.Chapters);
+        var section = Assert.Single(chapter.Sections);
         Assert.Equal(expectedParagraphs.Count, document.Chapters[^1].Sections[^1].Elements.Count);
-        foreach ((var expectedParagraph, var actualElement) in expectedParagraphs.Zip(document.Chapters[^1].Sections[^1].Elements))
-        {
-            Assert.IsType<Paragraph>(actualElement);
-            if (actualElement is Paragraph actualParagraph)
+        Assert.All(expectedParagraphs.Zip(document.Chapters[^1].Sections[^1].Elements),  v =>
             {
-                Assert.Equal(expectedParagraph.Text, actualParagraph.Text);
-                Assert.Equal(expectedParagraph.ClassName, actualParagraph.ClassName);
+            var actualParagraph = Assert.IsType<Paragraph>(v.Second);
+            Assert.Equal(v.First.Text, actualParagraph.Text);
+            Assert.Equal(v.First.ClassName, actualParagraph.ClassName);
                 Assert.NotNull(actualParagraph.ScriptLine);
-                Assert.Equal(expectedParagraph.ScriptLine?.Text, actualParagraph.ScriptLine.Text);
-            }
+            Assert.Equal(v.First.ScriptLine?.Text, actualParagraph.ScriptLine.Text);
+        });
             // ScrapingAozoraService.Classes の確認
-            foreach ((var key, var exceptedValue) in expectedDictionary)
+        Assert.All(expectedDictionary, expectedKeyValuePair =>
             {
-                Assert.True(_scrapingAozoraService._Classes().ContainsKey(key));
-                Assert.True(_scrapingAozoraService._Classes()[key].min <= exceptedValue.min);
-                Assert.True(_scrapingAozoraService._Classes()[key].max >= exceptedValue.max);
-            }
-        }
+            Assert.True(_scrapingAozoraService._Classes().TryGetValue(expectedKeyValuePair.key, out var actualValue));
+            Assert.True(actualValue.min <= expectedKeyValuePair.value.min);
+            Assert.True(actualValue.max >= expectedKeyValuePair.value.max);
+        });
     }
 
     internal class httpClientFactory : IHttpClientFactory
