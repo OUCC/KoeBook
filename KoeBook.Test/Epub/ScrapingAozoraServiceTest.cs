@@ -36,46 +36,34 @@ public class ScrapingAozoraServiceTest : DiTestBase
         return @$"<div class = ""main_text"">{text}</div>";
     }
 
-    public static object[][] ProcessChildrenlayout1TestCases()
-    {
-        (string, Paragraph)[] cases = [
-            // レイアウト1.1 改丁
-            (@"<span class=""notes"">［＃改丁］</span><br>", new Paragraph() { Text = "［＃改丁］", ScriptLine = new ScriptLine("", "", "") }),
-            // レイアウト1.2 改ページ
-            (@"<span class=""notes"">［＃改ページ］</span><br>", new Paragraph() { Text = "［＃改ページ］", ScriptLine = new ScriptLine("", "", "") }),
-            // レイアウト1.3 改見開き
-            (@"<span class=""notes"">［＃改見開き］</span><br>", new Paragraph() { Text = "［＃改見開き］", ScriptLine = new ScriptLine("", "", "") }),
-            // レイアウト1.4 改段
-            (@"<span class=""notes"">［＃改段］</span><br />", new Paragraph() { Text = "［＃改段］", ScriptLine = new ScriptLine("", "", "") }),
-        ];
-        return cases.Select(c => new object[] { ToMainText(c.Item1), c.Item2 }).ToArray();
-    }
-
     [Theory]
-    [MemberData(nameof(ProcessChildrenlayout1TestCases))]
-    public async void ProcessChildrenlayout1Test(string html, Paragraph expected)
+    // レイアウト1.1 改丁
+    [InlineData(@"<div><span class=""notes"">［＃改丁］</span><br></div>", "［＃改丁］", "")]
+    // レイアウト1.2 改ページ
+    [InlineData(@"<div><span class=""notes"">［＃改ページ］</span><br></div>", "［＃改ページ］", "")]
+    // レイアウト1.3 改見開き
+    [InlineData(@"<div><span class=""notes"">［＃改見開き］</span><br></div>", "［＃改見開き］", "")]
+    // レイアウト1.4 改段
+    [InlineData(@"<div><span class=""notes"">［＃改段］</span><br /><div>", "［＃改段］", "")]
+    public async void ProcessChildrenlayout1Test(string html, string expectedPragraphText, string expectedScriptText)
     {
         var config = Configuration.Default.WithDefaultLoader();
         using var context = BrowsingContext.New(config);
         var doc = await context.OpenAsync(request => request.Content(html));
-        var mainText = doc.QuerySelector(".main_text");
+        var mainText = doc.DocumentElement.LastElementChild?.LastElementChild;
         if (mainText == null)
             Assert.Fail();
         var document = EmptySingleParagraph;
 
         _scrapingAozoraService.ProcessChildren(document, mainText, "");
 
-        Assert.Single(document.Chapters);
-        Assert.Single(document.Chapters[^1].Sections);
-        Assert.Single(document.Chapters[^1].Sections);
-        Assert.IsType<Paragraph>(document.Chapters[^1].Sections[^1].Elements[^1]);
-        if (document.Chapters[^1].Sections[^1].Elements[^1] is Paragraph paragraph)
-        {
-            Assert.Equal(expected.Text, paragraph.Text);
-            Assert.Equal(expected.ClassName, paragraph.ClassName);
-            Assert.NotNull(paragraph.ScriptLine);
-            Assert.Equal(expected.ScriptLine?.Text, paragraph.ScriptLine.Text);
-        }
+        var chapter = Assert.Single(document.Chapters);
+        var section = Assert.Single(chapter.Sections);
+        var paragraph = Assert.IsType<Paragraph>(section.Elements[^1]);
+        Assert.Equal(expectedPragraphText, paragraph.Text);
+        Assert.Equal(string.Empty, paragraph.ClassName);
+        Assert.NotNull(paragraph.ScriptLine);
+        Assert.Equal(expectedScriptText, paragraph.ScriptLine.Text);
     }
 
     // Classes の各 value は、対応するclass で、ソースに出てきたものの内、最大のものの値をほじするようにする。
@@ -121,16 +109,16 @@ public class ScrapingAozoraServiceTest : DiTestBase
         var section = Assert.Single(chapter.Sections);
         Assert.Equal(expectedParagraphs.Count, document.Chapters[^1].Sections[^1].Elements.Count);
         Assert.All(expectedParagraphs.Zip(document.Chapters[^1].Sections[^1].Elements),  v =>
-            {
+        {
             var actualParagraph = Assert.IsType<Paragraph>(v.Second);
             Assert.Equal(v.First.Text, actualParagraph.Text);
             Assert.Equal(v.First.ClassName, actualParagraph.ClassName);
-                Assert.NotNull(actualParagraph.ScriptLine);
+            Assert.NotNull(actualParagraph.ScriptLine);
             Assert.Equal(v.First.ScriptLine?.Text, actualParagraph.ScriptLine.Text);
         });
-            // ScrapingAozoraService.Classes の確認
+        // ScrapingAozoraService.Classes の確認
         Assert.All(expectedDictionary, expectedKeyValuePair =>
-            {
+        {
             Assert.True(_scrapingAozoraService._Classes().TryGetValue(expectedKeyValuePair.key, out var actualValue));
             Assert.True(actualValue.min <= expectedKeyValuePair.value.min);
             Assert.True(actualValue.max >= expectedKeyValuePair.value.max);
