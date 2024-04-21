@@ -20,6 +20,12 @@ public class ScrapingAozoraServiceTest : DiTestBase
             .OfType<ScrapingAozoraService>()
             .Single();
     }
+
+    private static EpubDocument EmptySingleParagraph
+    {
+        get { return new EpubDocument("", "", "", Guid.NewGuid()) { Chapters = [new Chapter() { Sections = [new Section("") { Elements = [new Paragraph()] }] }] }; }
+    }
+
     /// <summary>
     /// (htmlの要素の)テキストを"<div class = \"main_text\"></div>"で囲む
     /// </summary>
