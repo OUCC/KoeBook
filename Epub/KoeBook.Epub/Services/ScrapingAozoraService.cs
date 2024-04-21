@@ -472,8 +472,6 @@ namespace KoeBook.Epub.Services
         /// <param name="document"><see cref="CssClass"/>を変更するEpubDocument</param>
         void AddCssClasses(EpubDocument document)
         {
-            var classNames = new string[] { "jisage", "text_indent", "chitsuki" };
-
             (int min, int max) value = (0, 0);
             if (Classes.TryGetValue("jisage", out value))
             {
