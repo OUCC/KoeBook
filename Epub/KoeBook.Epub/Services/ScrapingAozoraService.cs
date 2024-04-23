@@ -475,7 +475,7 @@ namespace KoeBook.Epub.Services
         /// <param name="element">処理を行う要素</param>
         /// <param name="appliedClasses">適用されるclassのリスト</param>
         /// <param name="scrapingInfo"></param>
-        internal void ProcessChildren(EpubDocument document, IElement element, string appliedClasses, int headingId, SplittedLineBuilder paragraphLineBuilder, SplittedLineBuilder scriptLineLineBuilder, Dictionary<string, (int min, int max)> classes)
+        internal void ProcessChildren(EpubDocument document, IElement element, string appliedClasses, ref int headingId, SplittedLineBuilder paragraphLineBuilder, SplittedLineBuilder scriptLineLineBuilder, Dictionary<string, (int min, int max)> classes)
         {
 
         }
