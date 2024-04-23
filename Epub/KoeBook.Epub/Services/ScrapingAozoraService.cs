@@ -60,7 +60,7 @@ namespace KoeBook.Epub.Services
                 var nextNode = element.NextSibling;
                 switch (element.TagName)
                 {
-                    case TagNames.A:
+                    case TagNames.Br:
                         if (previous)
                         {
                             document.EnsureSection(chapterNum);
