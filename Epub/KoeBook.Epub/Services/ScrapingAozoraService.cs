@@ -1,10 +1,7 @@
-﻿using System.Reflection.Metadata;
-using System.Text;
-using System.Xml.Linq;
+﻿using System.Text;
 using AngleSharp;
 using AngleSharp.Dom;
 using AngleSharp.Html.Dom;
-using AngleSharp.Io;
 using KoeBook.Core;
 using KoeBook.Core.Utilities;
 using KoeBook.Epub.Contracts.Services;
