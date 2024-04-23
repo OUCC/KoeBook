@@ -26,10 +26,12 @@ public class ScrapingAozoraServiceTest : DiTestBase
         => new("", "", "", Guid.NewGuid())
         {
             Chapters = [
-                new () {
-                    Sections = [new Section("") { Elements = [new Paragraph()] }] }]
+                new()
+                {
+                    Sections = [new Section("") { Elements = [new Paragraph()] }]
+                }]
         };
-    
+
 
     /// <summary>
     /// (htmlの要素の)テキストを"<div class = \"main_text\"></div>"で囲む
