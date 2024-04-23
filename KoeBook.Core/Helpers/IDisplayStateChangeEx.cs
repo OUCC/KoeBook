@@ -24,9 +24,23 @@ public static class IDisplayStateChangeEx
 
         private readonly int _maximum = maximum;
 
+        private int _progress;
+
         public void UpdateProgress(int progress)
         {
-            _displayStateChangeService.UpdateProgress(_bookProperties, progress, _maximum);
+            _displayStateChangeService.UpdateProgress(_bookProperties, _progress = progress, _maximum);
+        }
+
+        public void IncrementProgress()
+        {
+            _progress++;
+            _displayStateChangeService.UpdateProgress(_bookProperties, _progress, _maximum);
+        }
+
+        public void Finish()
+        {
+            _progress = _maximum;
+            _displayStateChangeService.UpdateProgress(_bookProperties, _progress, _maximum);
         }
     }
 }

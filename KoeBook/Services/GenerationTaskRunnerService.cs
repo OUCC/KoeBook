@@ -48,50 +48,49 @@ public class GenerationTaskRunnerService
 
     private async ValueTask RunAsync(GenerationTask task)
     {
-        try
-        {
-            var scripts = await _analyzerService.AnalyzeAsync(new(task.Id, task.Source, task.SourceType), _tempFolder, "", task.CancellationToken);
-            task.BookScripts = scripts;
-            task.State = GenerationState.Editting;
-            task.Progress = 0;
-            task.MaximumProgress = 0;
-            if (task.SkipEdit)
-            {
-                var resultPath = await _epubGenService.GenerateEpubAsync(scripts, _tempFolder, task.CancellationToken);
-                task.State = GenerationState.Completed;
-                task.Progress = 1;
-                task.MaximumProgress = 1;
-                var fileName = Path.GetFileName(resultPath);
-                File.Copy(resultPath, Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "KoeBook", fileName), true);
-            }
-        }
-        catch (OperationCanceledException)
-        {
-            task.State = GenerationState.Failed;
-        }
-        catch (EbookException e)
-        {
-            task.State = GenerationState.Failed;
-            await _dialogService.ShowInfoAsync("生成失敗", e.ExceptionType.GetEnumMemberValue()!, "OK", default);
-        }
-        catch
-        {
-            task.State = GenerationState.Failed;
-        }
+        if (task.CancellationToken.IsCancellationRequested || task.State == GenerationState.Failed)
+            return;
+
+        await RunAsyncCore(task, true);
+        if (task.SkipEdit)
+            await RunAsyncCore(task, false);
     }
 
     public async void RunGenerateEpubAsync(GenerationTask task)
     {
         if (task.CancellationToken.IsCancellationRequested || task.State == GenerationState.Failed || task.BookScripts is null)
             return;
+
+        await RunAsyncCore(task, false);
+    }
+
+    private async ValueTask RunAsyncCore(GenerationTask task, bool firstStep)
+    {
+        var tempDirectory = Path.Combine(_tempFolder, task.Id.ToString());
         try
         {
-            var resultPath = await _epubGenService.GenerateEpubAsync(task.BookScripts, _tempFolder, task.CancellationToken);
-            task.State = GenerationState.Completed;
-            task.Progress = 1;
-            task.MaximumProgress = 1;
-            var fileName = Path.GetFileName(resultPath);
-            File.Copy(resultPath, Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "KoeBook", fileName), true);
+            if (firstStep)
+            {
+                var scripts = await _analyzerService.AnalyzeAsync(new(task.Id, task.Source, task.SourceType), tempDirectory, task.CancellationToken);
+                task.BookScripts = scripts;
+                task.State = GenerationState.Editting;
+                task.Progress = 0;
+                task.MaximumProgress = 0;
+            }
+            else if (task.BookScripts is not null)
+            {
+                var resultPath = await _epubGenService.GenerateEpubAsync(task.BookScripts, tempDirectory, task.CancellationToken);
+                task.State = GenerationState.Completed;
+                task.Progress = 1;
+                task.MaximumProgress = 1;
+                var fileName = Path.GetFileName(resultPath);
+                var resultDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "KoeBook");
+                if (!Directory.Exists(resultDirectory))
+                    Directory.CreateDirectory(resultDirectory);
+                File.Move(resultPath, Path.Combine(resultDirectory, fileName), true);
+            }
+            else
+                throw new InvalidOperationException();
         }
         catch (OperationCanceledException)
         {
@@ -102,9 +101,10 @@ public class GenerationTaskRunnerService
             task.State = GenerationState.Failed;
             await _dialogService.ShowInfoAsync("生成失敗", e.ExceptionType.GetEnumMemberValue()!, "OK", default);
         }
-        catch
+        catch (Exception e)
         {
             task.State = GenerationState.Failed;
+            await _dialogService.ShowInfoAsync("生成失敗", $"不明なエラーが発生しました。\n{e.Message}", "OK", default);
         }
     }
 

@@ -9,6 +9,8 @@ public interface IDisplayStateChangeService
     /// </summary>
     void UpdateState(BookProperties bookProperties, GenerationState state);
 
+    void UpdateTitle(BookProperties bookProperties, string title);
+
     /// <summary>
     /// プログレスバーを更新します
     /// </summary>

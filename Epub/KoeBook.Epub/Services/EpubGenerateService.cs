@@ -1,7 +1,6 @@
 ﻿using KoeBook.Core;
 using KoeBook.Core.Contracts.Services;
 using KoeBook.Core.Models;
-using KoeBook.Epub;
 using KoeBook.Epub.Contracts.Services;
 using KoeBook.Epub.Models;
 
@@ -17,8 +16,7 @@ public class EpubGenerateService(ISoundGenerationService soundGenerationService,
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        var document = _documentStoreService.Documents.Where(doc => doc.Id == bookScripts.BookProperties.Id).FirstOrDefault()
-            ?? throw new InvalidOperationException($"The epub document ({bookScripts.BookProperties.Id}) can't be found.");
+        var document = _documentStoreService.Documents.Single(d => d.Id == bookScripts.BookProperties.Id);
 
         foreach (var scriptLine in bookScripts.ScriptLines)
         {

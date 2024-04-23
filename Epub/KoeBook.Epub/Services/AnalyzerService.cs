@@ -13,11 +13,11 @@ public partial class AnalyzerService(IScraperSelectorService scrapingService, IE
     private readonly IScraperSelectorService _scrapingService = scrapingService;
     private readonly IEpubDocumentStoreService _epubDocumentStoreService = epubDocumentStoreService;
     private readonly ILlmAnalyzerService _llmAnalyzerService = llmAnalyzerService;
-    private Dictionary<string, string> _rubyReplacements = new Dictionary<string, string>();
 
-    public async ValueTask<BookScripts> AnalyzeAsync(BookProperties bookProperties, string tempDirectory, string coverFilePath, CancellationToken cancellationToken)
+    public async ValueTask<BookScripts> AnalyzeAsync(BookProperties bookProperties, string tempDirectory, CancellationToken cancellationToken)
     {
-        coverFilePath = Path.Combine(tempDirectory, "Cover.png");
+        Directory.CreateDirectory(tempDirectory);
+        var coverFilePath = Path.Combine(tempDirectory, "Cover.png");
         using var fs = File.Create(coverFilePath);
         await fs.WriteAsync(CoverFile.ToArray(), cancellationToken);
         await fs.FlushAsync(cancellationToken);
@@ -27,43 +27,27 @@ public partial class AnalyzerService(IScraperSelectorService scrapingService, IE
         {
             document = await _scrapingService.ScrapingAsync(bookProperties.Source, coverFilePath, tempDirectory, bookProperties.Id, cancellationToken);
         }
+        catch (EbookException)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
-            EbookException.Throw(ExceptionType.WebScrapingFailed, "", ex);
+            EbookException.Throw(ExceptionType.WebScrapingFailed, innerException: ex);
             return default;
         }
         _epubDocumentStoreService.Register(document, cancellationToken);
 
-        var scriptLines = new List<ScriptLine>();
-        foreach (var chapter in document.Chapters)
-        {
-            foreach (var section in chapter.Sections)
+        var scriptLines = document.Chapters.SelectMany(c => c.Sections)
+            .SelectMany(s => s.Elements)
+            .OfType<Paragraph>()
+            .Select(p =>
             {
-                foreach (var element in section.Elements)
-                {
-                    if (element is Paragraph paragraph)
-                    {
-                        var line = paragraph.Text;
-                        // rubyタグがあればルビのdictionaryに登録
-                        var rubyDict = ExtractRuby(line);
+                // ルビを置換
+                var line = ReplaceBaseTextWithRuby(p.Text);
 
-                        foreach (var ruby in rubyDict)
-                        {
-                            if (!_rubyReplacements.ContainsKey(ruby.Key))
-                            {
-                                _rubyReplacements.Add(ruby.Key, ruby.Value);
-                            }
-                        }
-                        // ルビを置換
-                        line = ReplaceBaseTextWithRuby(line, rubyDict);
-
-                        var scriptLine = new ScriptLine(line, "", "");
-                        paragraph.ScriptLine = scriptLine;
-                        scriptLines.Add(scriptLine);
-                    }
-                }
-            }
-        }
+                return p.ScriptLine = new ScriptLine(line, "", "");
+            }).ToList();
 
         // 800文字以上になったら１チャンクに分ける
         var chunks = new List<string>();
@@ -85,32 +69,12 @@ public partial class AnalyzerService(IScraperSelectorService scrapingService, IE
         return bookScripts;
     }
 
-    private static Dictionary<string, string> ExtractRuby(string text)
-    {
-        var rubyDict = new Dictionary<string, string>();
-        var rubyRegex = new Regex("<ruby><rb>(.*?)</rb><rp>（</rp><rt>(.*?)</rt><rp>）</rp></ruby>");
-
-        foreach (Match match in rubyRegex.Matches(text))
-        {
-            if (!rubyDict.ContainsKey(match.Groups[1].Value))
-            {
-                rubyDict.Add(match.Groups[1].Value, match.Groups[2].Value);
-            }
-        }
-
-        return rubyDict;
-    }
-
-    private static string ReplaceBaseTextWithRuby(string text, Dictionary<string, string> rubyDict)
+    private static string ReplaceBaseTextWithRuby(string text)
     {
         // 元のテキストからルビタグをすべてルビテキストに置き換える
-        var resultText = text;
-        foreach (var pair in rubyDict)
-        {
-            var rubyTag = $"<ruby><rb>{pair.Key}</rb><rp>（</rp><rt>{pair.Value}</rt><rp>）</rp></ruby>";
-            resultText = resultText.Replace(rubyTag, pair.Value);
-        }
-
-        return resultText;
+        return RubyRegex().Replace(text, m => m.Groups[2].Value);
     }
+
+    [GeneratedRegex(@"<ruby>\s*<rb>(.*?)</rb>\s*<rp>\s*[（《\(]\s*</rp>\s*<rt>(.*?)</rt>\s*<rp>\s*[）》\)]\s*</rp>\s*</ruby>", RegexOptions.Multiline)]
+    private static partial Regex RubyRegex();
 }

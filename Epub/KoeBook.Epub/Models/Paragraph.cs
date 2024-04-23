@@ -6,5 +6,5 @@ public sealed class Paragraph : Element
 {
     public ScriptLine? ScriptLine { get; set; }
     public Audio? Audio => ScriptLine?.Audio;
-    public string? Text { get; set; }
+    public string Text { get; set; } = "";
 }
