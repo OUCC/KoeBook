@@ -449,19 +449,33 @@ namespace KoeBook.Epub.Services
             return UrlBookToCard().Replace(url, "$1card$2$3");
         }
 
-        private SplittedLineBuilder ParagraphLineBuilder = new SplittedLineBuilder();
-        private SplittedLineBuilder ScriptLineLineBuilder = new SplittedLineBuilder();
+        /// <summary>
+        /// class="main_text"なdiv要素の内容を<paramref name="document"/>に書き込む
+        /// </summary>
+        /// <param name="document">書き込むEpubDocument</param>
+        /// <param name="mainText">class = "main_text" なdiv要素</param>
+        internal void ProcessMainText(EpubDocument document, IHtmlDivElement mainText)
+        {
+            // 青空文庫の見出しのaタグのidの数値に対応
+            int headingId = 0;
+            SplittedLineBuilder paragraphLineBuilder = new();
+            SplittedLineBuilder scriptLineLineBuilder = new();
+            // 作品中で使われるCSSスタイルを実現するために必要なclassの情報を保持する。
+            // 例:
+            // 字下げに使われる class "jisage_1", "jisage_2", ..., "jisage_n"で、 n がいくつになるかは、その作品全体をチェックしないとわからないため、
+            Dictionary<string, (int min, int max)> classes = new();
 
-        private int HeadingId = 0;
-        private Dictionary<string, (int min, int max)> Classes = new Dictionary<string, (int, int)>();
+            //ProcessChildren(); する。
+        }
 
         /// <summary>
-        /// ある要素のChildrenに応じた処理を行います。
+        /// EpubDocumentに対してある要素に応じた処理を行う。
         /// </summary>
-        /// <param name="document">追加処理を行う対象となるEpubDocument</param>
+        /// <param name="document">処理対象のEpubDocument</param>
         /// <param name="element">処理を行う要素</param>
-        /// <param name="classes">適用される class のリスト</param>
-        internal void ProcessChildren(EpubDocument document, IElement element, string classes)
+        /// <param name="appliedClasses">適用されるclassのリスト</param>
+        /// <param name="scrapingInfo"></param>
+        internal void ProcessChildren(EpubDocument document, IElement element, string appliedClasses, int headingId, SplittedLineBuilder paragraphLineBuilder, SplittedLineBuilder scriptLineLineBuilder, Dictionary<string, (int min, int max)> classes)
         {
 
         }
@@ -470,10 +484,10 @@ namespace KoeBook.Epub.Services
         /// <see cref="Classes"/>に基づき、EpubDocument内で使用するクラスを生成する。
         /// </summary>
         /// <param name="document"><see cref="CssClass"/>を変更するEpubDocument</param>
-        void AddCssClasses(EpubDocument document)
+        void AddCssClasses(EpubDocument document, Dictionary<string, (int min, int max)> classes)
         {
             (int min, int max) value = (0, 0);
-            if (Classes.TryGetValue("jisage", out value))
+            if (classes.TryGetValue("jisage", out value))
             {
                 for (int i = value.min; i <= value.max; i++)
                 {
@@ -484,7 +498,7 @@ namespace KoeBook.Epub.Services
                     "));
                 }
             }
-            if (Classes.TryGetValue("text_indent", out value))
+            if (classes.TryGetValue("text_indent", out value))
             {
                 for (int i = value.min; i <= value.max; i++)
                 {
@@ -495,7 +509,7 @@ namespace KoeBook.Epub.Services
                     "));
                 }
             }
-            if (Classes.TryGetValue("chitsuki", out value))
+            if (classes.TryGetValue("chitsuki", out value))
             {
                 for (int i = value.min; i <= value.max; i++)
                 {
