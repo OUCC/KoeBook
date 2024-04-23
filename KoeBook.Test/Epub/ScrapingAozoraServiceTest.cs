@@ -6,6 +6,7 @@ using KoeBook.Epub.Services;
 using KoeBook.Core.Models;
 using Microsoft.Extensions.DependencyInjection;
 using KoeBook.Epub.Contracts.Services;
+using AngleSharp.Html.Dom;
 
 namespace KoeBook.Test.Epub;
 
@@ -22,14 +23,18 @@ public class ScrapingAozoraServiceTest : DiTestBase
     }
 
     private static EpubDocument EmptySingleParagraph
-    {
-        get { return new EpubDocument("", "", "", Guid.NewGuid()) { Chapters = [new Chapter() { Sections = [new Section("") { Elements = [new Paragraph()] }] }] }; }
-    }
+        => new("", "", "", Guid.NewGuid())
+        {
+            Chapters = [
+                new () {
+                    Sections = [new Section("") { Elements = [new Paragraph()] }] }]
+        };
+    
 
     /// <summary>
     /// (htmlの要素の)テキストを"<div class = \"main_text\"></div>"で囲む
     /// </summary>
-    /// <param name="text">divタグで囲むhtmlの要素</param>
+    /// <param name="text">divタグで囲む htmlの要素</param>
     /// <returns>divタグで囲まれた<paramref name="text"/></returns>
     private static string ToMainText(string text)
     {
@@ -45,22 +50,22 @@ public class ScrapingAozoraServiceTest : DiTestBase
     [InlineData(@"<div><span class=""notes"">［＃改見開き］</span><br></div>", "［＃改見開き］", "")]
     // レイアウト1.4 改段
     [InlineData(@"<div><span class=""notes"">［＃改段］</span><br /><div>", "［＃改段］", "")]
-    public async void ProcessChildrenlayout1Test(string html, string expectedPragraphText, string expectedScriptText)
+    public async void ProcessChildrenLayout1Test(string html, string expectedParagraphText, string expectedScriptText)
     {
         var config = Configuration.Default.WithDefaultLoader();
         using var context = BrowsingContext.New(config);
         var doc = await context.OpenAsync(request => request.Content(html));
-        var mainText = doc.DocumentElement.LastElementChild?.LastElementChild;
+        var mainText = doc.DocumentElement.LastElementChild?.LastElementChild as IHtmlDivElement;
         if (mainText == null)
             Assert.Fail();
         var document = EmptySingleParagraph;
 
-        _scrapingAozoraService.ProcessChildren(document, mainText, "");
+        _scrapingAozoraService.ProcessMainText(document, mainText);
 
         var chapter = Assert.Single(document.Chapters);
         var section = Assert.Single(chapter.Sections);
         var paragraph = Assert.IsType<Paragraph>(section.Elements[^1]);
-        Assert.Equal(expectedPragraphText, paragraph.Text);
+        Assert.Equal(expectedParagraphText, paragraph.Text);
         Assert.Equal(string.Empty, paragraph.ClassName);
         Assert.NotNull(paragraph.ScriptLine);
         Assert.Equal(expectedScriptText, paragraph.ScriptLine.Text);
@@ -92,18 +97,18 @@ public class ScrapingAozoraServiceTest : DiTestBase
 
     [Theory]
     [MemberData(nameof(ProcessChildrenlayout2TestCases))]
-    public async void ProcessChildrenlayout2Test(string html, IReadOnlyCollection<Paragraph> expectedParagraphs, IEnumerable<(string key, (int min, int max) value)> expectedDictionary)
+    public async void ProcessChildrenLayout2Test(string html, IReadOnlyCollection<Paragraph> expectedParagraphs, IEnumerable<(string key, (int min, int max) value)> expectedDictionary)
     {
         var config = Configuration.Default.WithDefaultLoader();
         using var context = BrowsingContext.New(config);
         var doc = await context.OpenAsync(request => request.Content(html));
-        var mainText = doc.QuerySelector(".main_text");
+        var mainText = doc.QuerySelector(".main_text") as IHtmlDivElement;
         if (mainText == null)
             Assert.Fail();
         var document = EmptySingleParagraph;
         _scrapingAozoraService._Classes().Clear();
 
-        _scrapingAozoraService.ProcessChildren(document, mainText, "");
+        _scrapingAozoraService.ProcessMainText(document, mainText);
 
         var chapter = Assert.Single(document.Chapters);
         var section = Assert.Single(chapter.Sections);
