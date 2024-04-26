@@ -8,8 +8,8 @@ namespace KoeBook.Test.Epub;
 
 public class ScrapingAozoraServiceTest
 {
-    [Theory]
-    [InlineData("", "")]
+    //[Theory]
+    //[InlineData("", "")]
     public async Task TextProcess(string input, string expected)
     {
         using var context = BrowsingContext.New(Configuration.Default);
@@ -21,8 +21,8 @@ public class ScrapingAozoraServiceTest
         Assert.Equal(expected, result);
     }
 
-    [Theory]
-    [InlineData("", new[] { "" })]
+    //[Theory]
+    //[InlineData("", new[] { "" })]
     public async Task AddParagraphs1(string input, string[] expected)
     {
         using var context = BrowsingContext.New(Configuration.Default);

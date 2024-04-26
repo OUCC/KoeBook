@@ -1,10 +1,7 @@
-﻿using System.Reflection.Metadata;
-using System.Text;
-using System.Xml.Linq;
+﻿using System.Text;
 using AngleSharp;
 using AngleSharp.Dom;
 using AngleSharp.Html.Dom;
-using AngleSharp.Io;
 using KoeBook.Core;
 using KoeBook.Core.Utilities;
 using KoeBook.Epub.Contracts.Services;
@@ -63,7 +60,7 @@ namespace KoeBook.Epub.Services
                 var nextNode = element.NextSibling;
                 switch (element.TagName)
                 {
-                    case TagNames.A:
+                    case TagNames.Br:
                         if (previous)
                         {
                             document.EnsureSection(chapterNum);
