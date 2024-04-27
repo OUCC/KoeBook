@@ -52,7 +52,8 @@ public class GenerationTaskRunnerService
             return;
 
         await RunAsyncCore(task, true);
-        await RunAsyncCore(task, false);
+        if (task.SkipEdit)
+            await RunAsyncCore(task, false);
     }
 
     public async void RunGenerateEpubAsync(GenerationTask task)
@@ -83,7 +84,10 @@ public class GenerationTaskRunnerService
                 task.Progress = 1;
                 task.MaximumProgress = 1;
                 var fileName = Path.GetFileName(resultPath);
-                File.Move(resultPath, Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "KoeBook", fileName), true);
+                var resultDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "KoeBook");
+                if (!Directory.Exists(resultDirectory))
+                    Directory.CreateDirectory(resultDirectory);
+                File.Move(resultPath, Path.Combine(resultDirectory, fileName), true);
             }
             else
                 throw new InvalidOperationException();

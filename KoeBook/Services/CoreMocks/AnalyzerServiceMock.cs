@@ -11,6 +11,7 @@ public class AnalyzerServiceMock(IDisplayStateChangeService stateService) : IAna
 
     public async ValueTask<BookScripts> AnalyzeAsync(BookProperties bookProperties, string tempDirectory, CancellationToken cancellationToken)
     {
+        Directory.CreateDirectory(tempDirectory);
         DisplayStateChanging stateChanging;
         if (bookProperties.SourceType == SourceType.Url)
         {

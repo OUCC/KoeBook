@@ -131,7 +131,7 @@ namespace KoeBook.Epub.Services
                 {
                     switch (child)
                     {
-                        case { TagName: TagNames.Anchor, Children: [IHtmlImageElement img] } when img.Source is not null:
+                        case { TagName: TagNames.A, Children: [IHtmlImageElement img] } when img.Source is not null:
                             {
                                 // 画像のダウンロード
                                 var filePath = Path.Combine(imageDirectory, new Uri(img.Source, Options.RawUri).Segments[^1].TrimEnd('/'));
@@ -143,7 +143,7 @@ namespace KoeBook.Epub.Services
                             if (!string.IsNullOrWhiteSpace(item.InnerHtml))
                                 lineBuilder.Append(item.InnerHtml);
                             break;
-                        case { TagName: TagNames.BreakRow }:
+                        case { TagName: TagNames.Br }:
                             foreach (var split in _splitBraceService.SplitBrace(lineBuilder.ToLinesAndClear()))
                             {
                                 section.Elements.Add(new Paragraph() { Text = split });
