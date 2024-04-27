@@ -26,7 +26,7 @@ public partial class ClaudeAnalyzerService(IClaudeService claudeService, IDispla
                 Messages = [new()
                 {
                     Role = "user",
-                    Content = CreatePrompt1(lineNumberingText)
+                    Content = CreateCharaterGuessPrompt(lineNumberingText)
                 }]
             },
                 cancellationToken: cancellationToken
@@ -40,7 +40,7 @@ public partial class ClaudeAnalyzerService(IClaudeService claudeService, IDispla
                 Messages = [new()
                 {
                     Role = "user",
-                    Content = CreatePrompt2(characterList)
+                    Content = CreateVoiceTypeAnalyzePrompt(characterList)
                 }]
             },
                 cancellationToken: cancellationToken
@@ -50,10 +50,7 @@ public partial class ClaudeAnalyzerService(IClaudeService claudeService, IDispla
 
             return new(bookProperties, new(characterVoiceMapping)) { ScriptLines = scriptLines };
         }
-        catch (OperationCanceledException)
-        {
-            throw;
-        }
+        catch (OperationCanceledException) { throw; }
         catch
         {
             throw new EbookException(ExceptionType.ClaudeTalkerAndStyleSettingFailed);
@@ -62,40 +59,21 @@ public partial class ClaudeAnalyzerService(IClaudeService claudeService, IDispla
 
     private Dictionary<string, string> ExtractCharacterVoiceMapping(string response, List<Character> characterList)
     {
-        var characterVoiceMapping = new Dictionary<string, string>();
-        var lines = response.Split("\n");
-        var characterListStartIndex = 0;
-        for (var i = 0; i < lines.Length; i++)
-        {
-            if (lines[i].StartsWith("[Assign Voices]"))
-            {
-                characterListStartIndex = i + 1;
-            }
-        }
-
-        for (var i = characterListStartIndex; i < lines.Length; i++)
-        {
-            var line = lines[i];
-            if (line.StartsWith('c'))
-            {
-                var characterId = line[1..line.IndexOf('.')];
-                var voiceType = line[(line.IndexOf(':') + 2)..];
-                // voiceTypeが_soundGenerationSelectorService.Modelsに含まれているかチェック
-                if (_soundGenerationSelectorService.Models.Any(x => x.Name == voiceType))
-                {
-                    characterVoiceMapping.Add(characterId, voiceType);
-                }
-                else
-                {
-                    characterVoiceMapping.Add(characterId, string.Empty);
-                }
-            }
-        }
-
-        return characterVoiceMapping;
+        return response.Split("\n")
+           .SkipWhile(l => !l.StartsWith("[Assign Voices]"))
+           .Where(l => l.StartsWith('c'))
+           .Select(l =>
+           {
+               var characterId = l[1..l.IndexOf('.')];
+               var voiceType = l[(l.IndexOf(':') + 2)..];
+               // voiceTypeが_soundGenerationSelectorService.Modelsに含まれているかチェック
+               return _soundGenerationSelectorService.Models.Any(x => x.Name == voiceType)
+                   ? (characterId, voiceType)
+                   : (characterId, string.Empty);
+           }).ToDictionary();
     }
 
-    private static string CreatePrompt1(string lineNumberingText)
+    private static string CreateCharaterGuessPrompt(string lineNumberingText)
     {
         return $$"""
                 {{lineNumberingText}}
@@ -132,28 +110,16 @@ public partial class ClaudeAnalyzerService(IClaudeService claudeService, IDispla
                 """;
     }
 
-    private string CreatePrompt2(List<Character> characterList)
+    private string CreateVoiceTypeAnalyzePrompt(List<Character> characterList)
     {
-        StringBuilder sb = new StringBuilder();
-        foreach (var character in characterList)
-        {
-            sb.AppendLine($"c{character.Id}. {character.Name}: {character.Description}");
-        }
-
-        StringBuilder sb2 = new StringBuilder();
-        foreach (var voiceType in _soundGenerationSelectorService.Models)
-        {
-            sb2.Append($"{voiceType.Name},");
-        }
-
         return $$"""
             Assign the most fitting voice type to each character from the provided list, ensuring the chosen voice aligns with their role and attributes in the story. Only select from the available voice types.
 
             Characters:
-            {{sb}}
+            {{string.Join("\n", characterList.Select(character => $"c{character.Id}. {character.Name}: {character.Description}"))}}
 
             Voice Types:
-            {{sb2}}
+            {{string.Join(",", _soundGenerationSelectorService.Models.Select(m => m.Name))}}
 
             Output Format:
             [Assign Voices]
@@ -188,6 +154,7 @@ public partial class ClaudeAnalyzerService(IClaudeService claudeService, IDispla
             if (lines[i].StartsWith("[REVISE VOICE ID]"))
             {
                 characterListEndIndex = i;
+                break;
             }
         }
         for (var i = characterListStartIndex; i < characterListEndIndex; i++)
