@@ -35,7 +35,7 @@ public partial class ClaudeAnalyzerService(IClaudeService claudeService, IDispla
             },
                 cancellationToken: cancellationToken
             );
-            (var characterList, var characterIdNameDic) = ExtractCharacterList(message1.ToString(), scriptLines);
+            (var characterList, var characterIdNameDictionary) = ExtractCharacterList(message1.ToString(), scriptLines);
             progress.IncrementProgress();
 
             var message2 = await _claudeService.Messages.CreateAsync(new()
@@ -50,7 +50,7 @@ public partial class ClaudeAnalyzerService(IClaudeService claudeService, IDispla
             },
                 cancellationToken: cancellationToken
             );
-            var characterVoiceMapping = ExtractCharacterVoiceMapping(message2.ToString(), characterIdNameDic);
+            var characterVoiceMapping = ExtractCharacterVoiceMapping(message2.ToString(), characterIdNameDictionary);
             progress.Finish();
 
             return new(bookProperties, new(characterVoiceMapping)) { ScriptLines = scriptLines };
@@ -180,20 +180,20 @@ public partial class ClaudeAnalyzerService(IClaudeService claudeService, IDispla
             }
         }
 
-        var dic = characterList.Select(x => KeyValuePair.Create(x.Id, x.Name)).ToDictionary();
-        var lines2 = lines.AsSpan()[(characterListEndIndex + 1)..];
+        var characterIdNameDictionary = characterList.Select(x => (x.Id, x.Name)).ToDictionary();
+        var voiceIdLines = lines.AsSpan()[(characterListEndIndex + 1)..];
 
-        for (var i = 0; i < lines2.Length; i++)
+        for (var i = 0; i < voiceIdLines.Length; i++)
         {
-            var line = lines2[i].AsSpan();
+            var line = voiceIdLines[i].AsSpan();
             line = line[(line.IndexOf(' ') + 2)..];//cまで無視
             line = line[..line.IndexOf(' ')];// 二人以上話す時には先頭のものを使う
-            if (dic.TryGetValue(line.ToString(), out var characterName))
+            if (characterIdNameDictionary.TryGetValue(line.ToString(), out var characterName))
             {
                 scriptLines[i].Character = characterName;
             }
         }
-        return (characterList, dic);
+        return (characterList, characterIdNameDictionary);
     }
 
     private class Character
