@@ -14,18 +14,21 @@ public partial class AiStoryAnalyzerService(ISplitBraceService splitBraceService
     {
         return new EpubDocument(aiStory.Title, "", "", id)
         {
-            Chapters = [new Chapter() {
-                    Sections = aiStory.Sections.Select(s => new Section("") {
-                        Elements = s.Paragraphs.SelectMany(p =>
-                        _splitBraceService.SplitBrace(p.GetText())
-                            .Zip(_splitBraceService.SplitBrace(p.GetScript()))
-                            .Select(Element (p) => new Paragraph {
-                                Text = p.First,
-                                ScriptLine = new(p.Second, "","")
-                            })
-                        ).ToList(),
-                    }).ToList(),
-                }]
+            Chapters = [new Chapter()
+            {
+                Sections = aiStory.Sections.Select(s => new Section("")
+                {
+                    Elements = s.Paragraphs.SelectMany(p =>
+                    _splitBraceService.SplitBrace(p.GetText())
+                        .Zip(_splitBraceService.SplitBrace(p.GetScript()))
+                        .Select(Element (p) => new Paragraph
+                        {
+                            Text = p.First,
+                            ScriptLine = new(p.Second, "", "")
+                        })
+                    ).ToList(),
+                }).ToList(),
+            }]
         };
     }
 }

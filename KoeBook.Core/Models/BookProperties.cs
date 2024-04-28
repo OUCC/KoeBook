@@ -17,17 +17,18 @@ public class BookProperties
         SourceType = sourceType;
     }
 
-    public BookProperties(Guid id, AiStory aiStory) {
+    public BookProperties(Guid id, AiStory aiStory)
+    {
         Id = id;
         Source = aiStory;
     }
 
-    public Guid Id { get; } 
+    public Guid Id { get; }
 
     /// <summary>
     /// UriまたはAiStory
     /// </summary>
-    public object Source { get; }  
+    public object Source { get; }
 
-    public SourceType SourceType { get; }  
+    public SourceType SourceType { get; }
 }

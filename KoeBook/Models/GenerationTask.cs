@@ -14,7 +14,7 @@ public partial class GenerationTask : ObservableObject
         _rawSource = source;
         SourceType = sourceType;
         _skipEdit = skipEdit;
-        _title   = sourceType == SourceType.FilePath ? Path.GetFileName(source) : source;
+        _title = sourceType == SourceType.FilePath ? Path.GetFileName(source) : source;
     }
 
     public GenerationTask(Guid id, AiStory aiStory, bool skipEdit)
@@ -22,7 +22,7 @@ public partial class GenerationTask : ObservableObject
         Id = id;
         _rawSource = aiStory;
         SourceType = SourceType.AiStory;
-        _skipEdit= skipEdit;
+        _skipEdit = skipEdit;
         _title = aiStory.Title;
     }
 
