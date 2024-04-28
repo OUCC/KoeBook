@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Buffers;
+using System.Text;
 using KoeBook.Core.Contracts.Services;
 using KoeBook.Core.Models;
 
@@ -9,6 +10,7 @@ public partial class ClaudeAnalyzerService(IClaudeService claudeService, IDispla
     private readonly IClaudeService _claudeService = claudeService;
     private readonly IDisplayStateChangeService _displayStateChangeService = displayStateChangeService;
     private readonly ISoundGenerationSelectorService _soundGenerationSelectorService = soundGenerationSelectorService;
+    private static readonly SearchValues<char> _searchValues = SearchValues.Create(", ");
 
     public async ValueTask<BookScripts> LlmAnalyzeScriptLinesAsync(BookProperties bookProperties, List<ScriptLine> scriptLines, CancellationToken cancellationToken)
     {
@@ -31,7 +33,7 @@ public partial class ClaudeAnalyzerService(IClaudeService claudeService, IDispla
             },
                 cancellationToken: cancellationToken
             );
-            var characterList = ExtractCharacterList(message1.ToString(), scriptLines);
+            (var characterList, var characterIdNameDic) = ExtractCharacterList(message1.ToString(), scriptLines);
 
             var message2 = await _claudeService.Messages.CreateAsync(new()
             {
@@ -46,7 +48,7 @@ public partial class ClaudeAnalyzerService(IClaudeService claudeService, IDispla
                 cancellationToken: cancellationToken
             );
 
-            var characterVoiceMapping = ExtractCharacterVoiceMapping(message2.ToString(), characterList);
+            var characterVoiceMapping = ExtractCharacterVoiceMapping(message2.ToString(), characterIdNameDic);
 
             return new(bookProperties, new(characterVoiceMapping)) { ScriptLines = scriptLines };
         }
@@ -57,7 +59,7 @@ public partial class ClaudeAnalyzerService(IClaudeService claudeService, IDispla
         }
     }
 
-    private Dictionary<string, string> ExtractCharacterVoiceMapping(string response, List<Character> characterList)
+    private Dictionary<string, string> ExtractCharacterVoiceMapping(string response, Dictionary<string, string> characterIdDic)
     {
         return response.Split("\n")
            .SkipWhile(l => !l.StartsWith("[Assign Voices]"))
@@ -65,11 +67,17 @@ public partial class ClaudeAnalyzerService(IClaudeService claudeService, IDispla
            .Select(l =>
            {
                var characterId = l[1..l.IndexOf('.')];
-               var voiceType = l[(l.IndexOf(':') + 2)..];
+               var voiceTypeSpan = l[(l.IndexOf(':') + 2)..].AsSpan();
+               // ボイス割り当てが複数あたったときに先頭のものを使う（例：群衆 AdultMan, AdultWoman)
+               if (voiceTypeSpan.IndexOfAny(_searchValues) > 0)
+               {
+                   voiceTypeSpan = voiceTypeSpan[..voiceTypeSpan.IndexOfAny(_searchValues)];
+               }
                // voiceTypeが_soundGenerationSelectorService.Modelsに含まれているかチェック
+               var voiceType = voiceTypeSpan.ToString();
                return _soundGenerationSelectorService.Models.Any(x => x.Name == voiceType)
-                   ? (characterId, voiceType)
-                   : (characterId, string.Empty);
+                   ? (characterIdDic[characterId], voiceType)
+                   : (characterIdDic[characterId], string.Empty);
            }).ToDictionary();
     }
 
@@ -138,7 +146,7 @@ public partial class ClaudeAnalyzerService(IClaudeService claudeService, IDispla
         return sb.ToString();
     }
 
-    private static List<Character> ExtractCharacterList(string response, List<ScriptLine> scriptLines)
+    private static (List<Character>, Dictionary<string, string>) ExtractCharacterList(string response, List<ScriptLine> scriptLines)
     {
         var characterList = new List<Character>();
         var lines = response.Split("\n");
@@ -174,15 +182,15 @@ public partial class ClaudeAnalyzerService(IClaudeService claudeService, IDispla
 
         for (var i = 0; i < lines2.Length; i++)
         {
-            var line = lines2[i].AsSpan().TrimEnd();
+            var line = lines2[i].AsSpan();
             line = line[(line.IndexOf(' ') + 2)..];//cまで無視
-            line = line[..line.IndexOf(' ')];
+            line = line[..line.IndexOf(' ')];// 二人以上話す時には先頭のものを使う
             if (dic.TryGetValue(line.ToString(), out var characterName))
             {
                 scriptLines[i].Character = characterName;
             }
         }
-        return characterList;
+        return (characterList, dic);
     }
 
     private class Character
