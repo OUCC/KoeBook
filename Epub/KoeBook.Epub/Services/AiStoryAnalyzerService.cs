@@ -12,11 +12,12 @@ public partial class AiStoryAnalyzerService(ISplitBraceService splitBraceService
 
     public EpubDocument CreateEpubDocument(AiStory aiStory, Guid id)
     {
+        int sectionNumber = 1;
         return new EpubDocument(aiStory.Title, "AI", "", id)
         {
             Chapters = [new Chapter()
             {
-                Sections = aiStory.Sections.Select(s => new Section("")
+                Sections = aiStory.Sections.Select(s => new Section($"第{sectionNumber++}章")
                 {
                     Elements = s.Paragraphs.SelectMany(p =>
                     _splitBraceService.SplitBrace(p.GetText())
