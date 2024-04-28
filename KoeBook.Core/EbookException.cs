@@ -62,4 +62,7 @@ public enum ExceptionType
     /// </summary>
     [EnumMember(Value = "無効なURLです")]
     InvalidUrl,
+
+    [EnumMember(Value = "xmlがスキーマを満たしていません")]
+    XmlSchemaUnfulfilled
 }
