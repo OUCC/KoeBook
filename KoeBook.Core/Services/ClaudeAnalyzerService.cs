@@ -21,21 +21,21 @@ public partial class ClaudeAnalyzerService(IClaudeService claudeService, IDispla
         {
             var message1 = await _claudeService.Messages.CreateAsync(new()
             {
-                Model = "claude-3-opus-20240229", // you can use Claudia.Models.Claude3Opus string constant
+                Model = Claudia.Models.Claude3Opus,
                 MaxTokens = 4000,
                 Messages = [new()
                 {
                     Role = "user",
-                    Content = CreateCharaterGuessPrompt(lineNumberingText)
+                    Content = CreateCharacterGuessPrompt(lineNumberingText)
                 }]
             },
                 cancellationToken: cancellationToken
             );
-            var characterList = ExtractCharacterList(message1.ToString());
+            var characterList = ExtractCharacterList(message1.ToString(), scriptLines);
 
             var message2 = await _claudeService.Messages.CreateAsync(new()
             {
-                Model = "claude-3-opus-20240229", // you can use Claudia.Models.Claude3Opus string constant
+                Model = Claudia.Models.Claude3Opus,
                 MaxTokens = 4000,
                 Messages = [new()
                 {
@@ -51,9 +51,9 @@ public partial class ClaudeAnalyzerService(IClaudeService claudeService, IDispla
             return new(bookProperties, new(characterVoiceMapping)) { ScriptLines = scriptLines };
         }
         catch (OperationCanceledException) { throw; }
-        catch
+        catch (Exception e)
         {
-            throw new EbookException(ExceptionType.ClaudeTalkerAndStyleSettingFailed);
+            throw new EbookException(ExceptionType.ClaudeTalkerAndStyleSettingFailed, innerException: e);
         }
     }
 
@@ -73,7 +73,7 @@ public partial class ClaudeAnalyzerService(IClaudeService claudeService, IDispla
            }).ToDictionary();
     }
 
-    private static string CreateCharaterGuessPrompt(string lineNumberingText)
+    private static string CreateCharacterGuessPrompt(string lineNumberingText)
     {
         return $$"""
                 {{lineNumberingText}}
@@ -138,7 +138,7 @@ public partial class ClaudeAnalyzerService(IClaudeService claudeService, IDispla
         return sb.ToString();
     }
 
-    private static List<Character> ExtractCharacterList(string response)
+    private static List<Character> ExtractCharacterList(string response, List<ScriptLine> scriptLines)
     {
         var characterList = new List<Character>();
         var lines = response.Split("\n");
@@ -169,18 +169,17 @@ public partial class ClaudeAnalyzerService(IClaudeService claudeService, IDispla
             }
         }
 
+        var dic = characterList.Select(x => KeyValuePair.Create(x.Id, x.Name)).ToDictionary();
+        var lines2 = lines.AsSpan()[(characterListEndIndex + 1)..];
+
+        for (var i = 0; i < lines2.Length; i++)
         {
-            var dest = (stackalloc Range[4]);
-            for (var i = characterListEndIndex + 1; i < lines.Length; i++)
+            var line = lines2[i].AsSpan().TrimEnd();
+            line = line[(line.IndexOf(' ') + 2)..];//cまで無視
+            line = line[..line.IndexOf(' ')];
+            if (dic.TryGetValue(line.ToString(), out var characterName))
             {
-                var line = lines[i].AsSpan();
-                if (line.Length > 0 && line.Contains('c'))
-                {
-                    if (line.Split(dest, ' ') > 3)
-                        throw new EbookException(ExceptionType.ClaudeTalkerAndStyleSettingFailed);
-                    var characterId = line[dest[1]];
-                    var narrationOrDialogue = line[dest[2]];
-                }
+                scriptLines[i].Character = characterName;
             }
         }
         return characterList;

@@ -36,6 +36,8 @@ public class MyOpenAiService(ISecretSettingsService secretSettingsService, IHttp
 
     public IAudioService Audio => GetOpenAiService()?.Audio!;
 
+    public IBatchService Batch => GetOpenAiService()?.Batch!;
+
     public void SetDefaultModelId(string modelId)
     {
         GetOpenAiService()?.SetDefaultModelId(modelId);
