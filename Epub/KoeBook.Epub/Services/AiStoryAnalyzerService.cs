@@ -12,7 +12,7 @@ public partial class AiStoryAnalyzerService(ISplitBraceService splitBraceService
 
     public EpubDocument CreateEpubDocument(AiStory aiStory, Guid id)
     {
-        return new EpubDocument(aiStory.Title, "", "", id)
+        return new EpubDocument(aiStory.Title, "AI", "", id)
         {
             Chapters = [new Chapter()
             {
