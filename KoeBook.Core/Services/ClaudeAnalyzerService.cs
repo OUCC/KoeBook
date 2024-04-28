@@ -1,6 +1,7 @@
 ﻿using System.Buffers;
 using System.Text;
 using KoeBook.Core.Contracts.Services;
+using KoeBook.Core.Helpers;
 using KoeBook.Core.Models;
 
 namespace KoeBook.Core.Services;
@@ -14,6 +15,7 @@ public partial class ClaudeAnalyzerService(IClaudeService claudeService, IDispla
 
     public async ValueTask<BookScripts> LlmAnalyzeScriptLinesAsync(BookProperties bookProperties, List<ScriptLine> scriptLines, CancellationToken cancellationToken)
     {
+        var progress = _displayStateChangeService.ResetProgress(bookProperties, GenerationState.Analyzing, 2);
         var lineNumberingText = LineNumbering(scriptLines);
         if (_claudeService.Messages is null)
         {
@@ -34,6 +36,7 @@ public partial class ClaudeAnalyzerService(IClaudeService claudeService, IDispla
                 cancellationToken: cancellationToken
             );
             (var characterList, var characterIdNameDic) = ExtractCharacterList(message1.ToString(), scriptLines);
+            progress.IncrementProgress();
 
             var message2 = await _claudeService.Messages.CreateAsync(new()
             {
@@ -47,8 +50,8 @@ public partial class ClaudeAnalyzerService(IClaudeService claudeService, IDispla
             },
                 cancellationToken: cancellationToken
             );
-
             var characterVoiceMapping = ExtractCharacterVoiceMapping(message2.ToString(), characterIdNameDic);
+            progress.Finish();
 
             return new(bookProperties, new(characterVoiceMapping)) { ScriptLines = scriptLines };
         }
