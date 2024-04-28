@@ -18,8 +18,8 @@ public class CreateCoverFileService : ICreateCoverFileService
             graphics.FillRectangle(Brushes.PaleGoldenrod, graphics.VisibleClipBounds);
 
             // フォントの指定
-            using Font titleFont = new Font("ＭＳ ゴシック", 125, FontStyle.Bold);
-            using Font authorFont = new Font("ＭＳ ゴシック", 75, FontStyle.Bold);
+            using Font titleFont = new Font("游ゴシック Medium", 125, FontStyle.Bold);
+            using Font authorFont = new Font("游ゴシック Medium", 75, FontStyle.Bold);
 
             // 色の指定
             using Brush brush = new SolidBrush(Color.Black);
