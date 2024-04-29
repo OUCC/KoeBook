@@ -12,21 +12,21 @@ public class CreateCoverFileService : ICreateCoverFileService
         try
         {
             // ビットマップの作成
-            using Bitmap bitmap = new Bitmap(1800, 2560);
-            using Graphics graphics = Graphics.FromImage(bitmap);
+            using var bitmap = new Bitmap(1800, 2560);
+            using var graphics = Graphics.FromImage(bitmap);
 
             // 塗りつぶし
             graphics.FillRectangle(Brushes.PaleGoldenrod, graphics.VisibleClipBounds);
 
             // フォントの指定
-            using Font titleFont = new Font("游ゴシック Medium", 125, FontStyle.Bold);
-            using Font authorFont = new Font("游ゴシック Medium", 75, FontStyle.Bold);
+            using var titleFont = new Font("游ゴシック Medium", 125, FontStyle.Bold);
+            using var authorFont = new Font("游ゴシック Medium", 75, FontStyle.Bold);
 
             // 色の指定
             using var brush = Brushes.Black;
 
             // 表示位置の指定
-            using StringFormat stringFormat = new StringFormat();
+            using var stringFormat = new StringFormat();
             stringFormat.Alignment = StringAlignment.Center;
             stringFormat.LineAlignment = StringAlignment.Center;
 
