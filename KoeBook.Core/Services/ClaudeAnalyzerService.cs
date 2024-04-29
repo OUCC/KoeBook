@@ -181,7 +181,7 @@ public partial class ClaudeAnalyzerService(IClaudeService claudeService, IDispla
             }
         }
 
-        var characterIdNameDictionary = characterList.Select(x => (x.Id, x.Name)).ToDictionary();
+        var characterId2Name = characterList.Select(x => (x.Id, x.Name)).ToDictionary();
         var voiceIdLines = lines.AsSpan()[(characterListEndIndex + 1)..];
 
         for (var i = 0; i < voiceIdLines.Length; i++)
@@ -189,12 +189,12 @@ public partial class ClaudeAnalyzerService(IClaudeService claudeService, IDispla
             var line = voiceIdLines[i].AsSpan();
             line = line[(line.IndexOf(' ') + 2)..];//cまで無視
             line = line[..line.IndexOf(' ')];// 二人以上話す時には先頭のものを使う
-            if (characterIdNameDictionary.TryGetValue(line.ToString(), out var characterName))
+            if (characterId2Name.TryGetValue(line.ToString(), out var characterName))
             {
                 scriptLines[i].Character = characterName;
             }
         }
-        return (characterList, characterIdNameDictionary);
+        return (characterList, characterId2Name);
     }
 
     private class Character
