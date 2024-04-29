@@ -5,7 +5,7 @@ namespace KoeBook.Services.CoreMocks
 {
     public class StoryCreaterServiceMock : IStoryCreaterService
     {
-        public ValueTask<string> CreateStoryAsync(StoryGenre genre, string intruction, CancellationToken cancellationToken)
+        public ValueTask<string> CreateStoryAsync(StoryGenre genre, string instruction, CancellationToken cancellationToken)
         {
             return ValueTask.FromResult("""
             <?xml version="1.0" encoding="UTF-8"?>

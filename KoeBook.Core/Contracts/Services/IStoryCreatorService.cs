@@ -5,5 +5,5 @@ namespace KoeBook.Core.Contracts.Services;
 public interface IStoryCreaterService
 {
     /// <returns>XML</returns>
-    public ValueTask<string> CreateStoryAsync(StoryGenre genre, string intruction, CancellationToken cancellationToken);
+    public ValueTask<string> CreateStoryAsync(StoryGenre genre, string instruction, CancellationToken cancellationToken);
 }

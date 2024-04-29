@@ -64,7 +64,8 @@ public partial class AnalyzerService(
                 var line = ReplaceBaseTextWithRuby(p.Text);
 
                 return p.ScriptLine = new ScriptLine(line, "", "");
-            }).ToList();
+            }).Where(l => !string.IsNullOrEmpty(l.Text))
+            .ToArray();
 
         // 800文字以上になったら１チャンクに分ける
         var chunks = new List<string>();
@@ -81,7 +82,7 @@ public partial class AnalyzerService(
         if (chunk.Length > 0) chunks.Add(chunk.ToString());
 
         // GPT4による話者、スタイル解析
-        var bookScripts = await _llmAnalyzerService.LlmAnalyzeScriptLinesAsync(bookProperties, scriptLines, chunks, cancellationToken);
+        var bookScripts = await _llmAnalyzerService.LlmAnalyzeScriptLinesAsync(bookProperties, [.. scriptLines], chunks, cancellationToken);
 
         return bookScripts;
     }

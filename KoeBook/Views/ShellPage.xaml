@@ -25,7 +25,7 @@
                     IsClosable="False"
                     Header="AIストーリー">
                     <TabViewItem.IconSource>
-                        <SymbolIconSource Symbol="Add" />
+                        <SymbolIconSource Symbol="Edit" />
                     </TabViewItem.IconSource>
                     <local:CreateStoryPage Margin="20,10,20,10" />
                 </TabViewItem>
