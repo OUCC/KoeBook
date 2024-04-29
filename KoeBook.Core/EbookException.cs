@@ -62,4 +62,7 @@ public enum ExceptionType
     /// </summary>
     [EnumMember(Value = "無効なURLです")]
     InvalidUrl,
+
+    [EnumMember(Value = "表紙の画像の生成に失敗しました")]
+    CreateCoverFileFailed,
 }

@@ -1,12 +1,13 @@
 ﻿using System.Drawing;
 using System.Drawing.Imaging;
+using KoeBook.Core;
 using KoeBook.Core.Contracts.Services;
 
 namespace KoeBook.Services;
 
 public class CreateCoverFileService : ICreateCoverFileService
 {
-    public bool TryCreate(string title, string author, string coverFilePath)
+    public void Create(string title, string author, string coverFilePath)
     {
         try
         {
@@ -36,11 +37,11 @@ public class CreateCoverFileService : ICreateCoverFileService
             // png として出力
             bitmap.Save(Path.Combine(coverFilePath, "Cover.png"), ImageFormat.Png);
 
-            return true;
+            return;
         }
-        catch
+        catch (Exception ex)
         {
-            return false;
+            throw new EbookException(ExceptionType.CreateCoverFileFailed, ex.Message);
         }
 
     }

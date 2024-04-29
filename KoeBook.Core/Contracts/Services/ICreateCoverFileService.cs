@@ -15,5 +15,5 @@ public interface ICreateCoverFileService
     /// <param name="author">作品の著者名</param>
     /// <param name="coverFilePath">表紙の画像を置くフォルダのパス</param>
     /// <returns>成功すれば、true、失敗すれば、false</returns>
-    bool TryCreate(string title, string author, string coverFilePath);
+    void Create(string title, string author, string coverFilePath);
 }
