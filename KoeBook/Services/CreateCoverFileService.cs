@@ -12,7 +12,9 @@ public class CreateCoverFileService : ICreateCoverFileService
         try
         {
             // ビットマップの作成
-            using var bitmap = new Bitmap(1800, 2560);
+            // サイズはKindleガイドラインの推奨サイズによる
+            // https://kdp.amazon.co.jp/ja_JP/help/topic/G6GTK3T3NUHKLEFX
+            using var bitmap = new Bitmap(1600, 2560);
             using var graphics = Graphics.FromImage(bitmap);
 
             // 塗りつぶし
@@ -31,8 +33,8 @@ public class CreateCoverFileService : ICreateCoverFileService
             stringFormat.LineAlignment = StringAlignment.Center;
 
             // 文字の入力
-            graphics.DrawString(title, titleFont, brush, new Rectangle(0, 0, 1800, 1920), stringFormat);
-            graphics.DrawString($"著者: {author}", authorFont, brush, new Rectangle(0, 1920, 1800, 640), stringFormat);
+            graphics.DrawString(title, titleFont, brush, new Rectangle(0, 0, 1600, 1920), stringFormat);
+            graphics.DrawString($"著者: {author}", authorFont, brush, new Rectangle(0, 1920, 1600, 640), stringFormat);
 
             // png として出力
             bitmap.Save(Path.Combine(coverFilePath, "Cover.png"), ImageFormat.Png);
