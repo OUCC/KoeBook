@@ -4,5 +4,5 @@ namespace KoeBook.Core.Contracts.Services;
 
 public interface ILlmAnalyzerService
 {
-    ValueTask<BookScripts> LlmAnalyzeScriptLinesAsync(BookProperties bookProperties, List<ScriptLine> scriptLines, CancellationToken cancellationToken);
+    ValueTask<BookScripts> LlmAnalyzeScriptLinesAsync(BookProperties bookProperties, ScriptLine[] scriptLines, CancellationToken cancellationToken);
 }

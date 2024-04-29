@@ -1,4 +1,5 @@
 ﻿using System.Buffers;
+using System.Collections.Immutable;
 using System.Text;
 using KoeBook.Core.Contracts.Services;
 using KoeBook.Core.Helpers;
@@ -13,7 +14,7 @@ public partial class ClaudeAnalyzerService(IClaudeService claudeService, IDispla
     private readonly ISoundGenerationSelectorService _soundGenerationSelectorService = soundGenerationSelectorService;
     private static readonly SearchValues<char> _searchValues = SearchValues.Create(", ");
 
-    public async ValueTask<BookScripts> LlmAnalyzeScriptLinesAsync(BookProperties bookProperties, List<ScriptLine> scriptLines, CancellationToken cancellationToken)
+    public async ValueTask<BookScripts> LlmAnalyzeScriptLinesAsync(BookProperties bookProperties, ScriptLine[] scriptLines, CancellationToken cancellationToken)
     {
         var progress = _displayStateChangeService.ResetProgress(bookProperties, GenerationState.Analyzing, 2);
         var lineNumberingText = LineNumbering(scriptLines);
@@ -53,7 +54,7 @@ public partial class ClaudeAnalyzerService(IClaudeService claudeService, IDispla
             var characterVoiceMapping = ExtractCharacterVoiceMapping(message2.ToString(), characterId2Name);
             progress.Finish();
 
-            return new(bookProperties, new(characterVoiceMapping)) { ScriptLines = scriptLines };
+            return new(bookProperties, new(characterVoiceMapping)) { ScriptLines = [.. scriptLines] };
         }
         catch (OperationCanceledException) { throw; }
         catch (Exception e)
@@ -140,7 +141,7 @@ public partial class ClaudeAnalyzerService(IClaudeService claudeService, IDispla
             """;
     }
 
-    private static string LineNumbering(List<ScriptLine> scriptLines)
+    private static string LineNumbering(ScriptLine[] scriptLines)
     {
         var sb = new StringBuilder();
         foreach (var (index, scriptLine) in scriptLines.Select((x, i) => (i, x)))
@@ -150,7 +151,7 @@ public partial class ClaudeAnalyzerService(IClaudeService claudeService, IDispla
         return sb.ToString();
     }
 
-    private static (Character[], Dictionary<string, string>) ExtractCharacterList(string response, List<ScriptLine> scriptLines)
+    private static (Character[], Dictionary<string, string>) ExtractCharacterList(string response, ScriptLine[] scriptLines)
     {
         var lines = response.Split("\n");
         var characters = lines
@@ -179,7 +180,7 @@ public partial class ClaudeAnalyzerService(IClaudeService claudeService, IDispla
                                     }
                                     return 0;
                                 }).Count();
-        if (voiceIdLinesCount != scriptLines.Count)
+        if (voiceIdLinesCount != scriptLines.Length)
             throw new EbookException(ExceptionType.ClaudeTalkerAndStyleSettingFailed);
         return (characters, characterId2Name);
     }
