@@ -70,11 +70,12 @@ public partial class ClaudeAnalyzerService(IClaudeService claudeService, IDispla
            .Select(l =>
            {
                var characterId = l[1..l.IndexOf('.')];
-               var voiceTypeSpan = l[(l.IndexOf(':') + 2)..].AsSpan();
+               var voiceTypeSpan = l.AsSpan()[(l.IndexOf(':') + 2)..];
                // ボイス割り当てが複数あたったときに先頭のものを使う（例：群衆 AdultMan, AdultWoman)
-               if (voiceTypeSpan.IndexOfAny(_searchValues) > 0)
+               var separatorIndex = voiceTypeSpan.IndexOfAny(_searchValues);
+               if (separatorIndex > 0)
                {
-                   voiceTypeSpan = voiceTypeSpan[..voiceTypeSpan.IndexOfAny(_searchValues)];
+                   voiceTypeSpan = voiceTypeSpan[..separatorIndex];
                }
                // voiceTypeが_soundGenerationSelectorService.Modelsに含まれているかチェック
                var voiceType = voiceTypeSpan.ToString();
