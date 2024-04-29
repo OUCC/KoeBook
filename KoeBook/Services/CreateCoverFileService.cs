@@ -42,6 +42,6 @@ public class CreateCoverFileService : ICreateCoverFileService
         {
             return false;
         }
-        
+
     }
 }
