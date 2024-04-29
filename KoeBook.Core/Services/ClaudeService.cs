@@ -20,6 +20,8 @@ public class ClaudeService(ISecretSettingsService secretSettingsService) : IClau
             if (string.IsNullOrEmpty(_secretSettingsService.ApiKey))
             {
                 _apiKey = _secretSettingsService.ApiKey;
+                _anthropic?.Dispose();
+                _anthropic = null;
                 return null;
             }
 

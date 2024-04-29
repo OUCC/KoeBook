@@ -50,6 +50,8 @@ public class MyOpenAiService(ISecretSettingsService secretSettingsService, IHttp
             if (string.IsNullOrEmpty(_secretSettingsService.ApiKey))
             {
                 _apiKey = _secretSettingsService.ApiKey;
+                _openAiService?.Dispose();
+                _openAiService = null;
                 return null;
             }
             var options = new OpenAiOptions
