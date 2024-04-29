@@ -35,7 +35,7 @@ public partial class ClaudeAnalyzerService(IClaudeService claudeService, IDispla
             },
                 cancellationToken: cancellationToken
             );
-            (var characterList, var characterIdNameDictionary) = ExtractCharacterList(message1.ToString(), scriptLines);
+            (var characterList, var characterId2Name) = ExtractCharacterList(message1.ToString(), scriptLines);
             progress.IncrementProgress();
 
             var message2 = await _claudeService.Messages.CreateAsync(new()
@@ -50,7 +50,7 @@ public partial class ClaudeAnalyzerService(IClaudeService claudeService, IDispla
             },
                 cancellationToken: cancellationToken
             );
-            var characterVoiceMapping = ExtractCharacterVoiceMapping(message2.ToString(), characterIdNameDictionary);
+            var characterVoiceMapping = ExtractCharacterVoiceMapping(message2.ToString(), characterId2Name);
             progress.Finish();
 
             return new(bookProperties, new(characterVoiceMapping)) { ScriptLines = scriptLines };
@@ -152,38 +152,25 @@ public partial class ClaudeAnalyzerService(IClaudeService claudeService, IDispla
 
     private static (List<Character>, Dictionary<string, string>) ExtractCharacterList(string response, List<ScriptLine> scriptLines)
     {
-        var characterList = new List<Character>();
         var lines = response.Split("\n");
-        var characterListStartIndex = 0;
-        var characterListEndIndex = 0;
-        for (var i = 0; i < lines.Length; i++)
-        {
-            if (lines[i].StartsWith("[REVISE CHARACTER LIST]"))
+        var characterList = lines
+            .SkipWhile(l => !l.StartsWith("[REVISE CHARACTER LIST]"))
+            .TakeWhile(l => !l.StartsWith("[REVISE VOICE ID]"))
+            .Where(l => l.StartsWith('c'))
+            .Select(l =>
             {
-                characterListStartIndex = i + 1;
-            }
-
-            if (lines[i].StartsWith("[REVISE VOICE ID]"))
-            {
-                characterListEndIndex = i;
-                break;
-            }
-        }
-        for (var i = characterListStartIndex; i < characterListEndIndex; i++)
-        {
-            var line = lines[i];
-            if (line.StartsWith('c'))
-            {
-                var characterId = line[1..line.IndexOf('.')];
-                var characterName = line[(line.IndexOf('.') + 2)..line.IndexOf(':')];
-                var characterDescription = line[(line.IndexOf(':') + 2)..];
-                characterList.Add(new Character(characterId, characterName, characterDescription));
-            }
-        }
+                var dotIndex = l.IndexOf('.');
+                var colonIndex = l.IndexOf(':');
+                return new Character(l[1..dotIndex], l[(dotIndex + 2)..colonIndex], l[(colonIndex + 2)..]);
+            }).ToList();
 
         var characterId2Name = characterList.Select(x => (x.Id, x.Name)).ToDictionary();
-        var voiceIdLines = lines.AsSpan()[(characterListEndIndex + 1)..];
+        var voiceIdLines = lines.SkipWhile(l => !l.StartsWith("[REVISE VOICE ID]"))
+                                .Where((x,i)=>x.StartsWith(i.ToString())) //[REVISE VOICE ID]の分ズレる
+                                .ToArray().AsSpan();
 
+        if(voiceIdLines.Length != scriptLines.Count)
+            throw new EbookException(ExceptionType.ClaudeTalkerAndStyleSettingFailed);
         for (var i = 0; i < voiceIdLines.Length; i++)
         {
             var line = voiceIdLines[i].AsSpan();
