@@ -165,21 +165,22 @@ public partial class ClaudeAnalyzerService(IClaudeService claudeService, IDispla
             }).ToArray();
 
         var characterId2Name = characters.Select(x => (x.Id, x.Name)).ToDictionary();
-        var voiceIdLines = lines.SkipWhile(l => !l.StartsWith("[REVISE VOICE ID]"))
-                                .Where((x, i) => x.StartsWith(i.ToString())); //[REVISE VOICE ID]の分ズレる
-
-        if (voiceIdLines.Count() != scriptLines.Count)
+        var voiceIdLinesCount = lines.SkipWhile(l => !l.StartsWith("[REVISE VOICE ID]"))
+                                .Where((x, i) => x.StartsWith(i.ToString())) //[REVISE VOICE ID]の分ズレる
+                                .Zip(scriptLines)
+                                .Select(zippedLine =>
+                                {
+                                    var voiceIdLine = zippedLine.First.AsSpan();
+                                    voiceIdLine = voiceIdLine[(voiceIdLine.IndexOf(' ') + 2)..];//cまで無視
+                                    voiceIdLine = voiceIdLine[..voiceIdLine.IndexOf(' ')];// 二人以上話す時には先頭のものを使う
+                                    if (characterId2Name.TryGetValue(voiceIdLine.ToString(), out var characterName))
+                                    {
+                                        zippedLine.Second.Character = characterName;
+                                    }
+                                    return 0;
+                                }).Count();
+        if (voiceIdLinesCount != scriptLines.Count)
             throw new EbookException(ExceptionType.ClaudeTalkerAndStyleSettingFailed);
-        foreach (var (voiceIdLine, scriptLine) in voiceIdLines.Zip(scriptLines))
-        {
-            var line = voiceIdLine.AsSpan();
-            line = line[(line.IndexOf(' ') + 2)..];//cまで無視
-            line = line[..line.IndexOf(' ')];// 二人以上話す時には先頭のものを使う
-            if (characterId2Name.TryGetValue(line.ToString(), out var characterName))
-            {
-                scriptLine.Character = characterName;
-            }
-        }
         return (characters, characterId2Name);
     }
 
