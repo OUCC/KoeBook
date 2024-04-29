@@ -35,7 +35,7 @@ public partial class ClaudeAnalyzerService(IClaudeService claudeService, IDispla
             },
                 cancellationToken: cancellationToken
             );
-            (var characterList, var characterId2Name) = ExtractCharacterList(message1.ToString(), scriptLines);
+            (var characters, var characterId2Name) = ExtractCharacterList(message1.ToString(), scriptLines);
             progress.IncrementProgress();
 
             var message2 = await _claudeService.Messages.CreateAsync(new()
@@ -45,7 +45,7 @@ public partial class ClaudeAnalyzerService(IClaudeService claudeService, IDispla
                 Messages = [new()
                 {
                     Role = "user",
-                    Content = CreateVoiceTypeAnalyzePrompt(characterList)
+                    Content = CreateVoiceTypeAnalyzePrompt(characters)
                 }]
             },
                 cancellationToken: cancellationToken
@@ -122,7 +122,7 @@ public partial class ClaudeAnalyzerService(IClaudeService claudeService, IDispla
                 """;
     }
 
-    private string CreateVoiceTypeAnalyzePrompt(List<Character> characterList)
+    private string CreateVoiceTypeAnalyzePrompt(Character[] characterList)
     {
         return $$"""
             Assign the most fitting voice type to each character from the provided list, ensuring the chosen voice aligns with their role and attributes in the story. Only select from the available voice types.
@@ -150,10 +150,10 @@ public partial class ClaudeAnalyzerService(IClaudeService claudeService, IDispla
         return sb.ToString();
     }
 
-    private static (List<Character>, Dictionary<string, string>) ExtractCharacterList(string response, List<ScriptLine> scriptLines)
+    private static (Character[], Dictionary<string, string>) ExtractCharacterList(string response, List<ScriptLine> scriptLines)
     {
         var lines = response.Split("\n");
-        var characterList = lines
+        var characters = lines
             .SkipWhile(l => !l.StartsWith("[REVISE CHARACTER LIST]"))
             .TakeWhile(l => !l.StartsWith("[REVISE VOICE ID]"))
             .Where(l => l.StartsWith('c'))
@@ -162,26 +162,25 @@ public partial class ClaudeAnalyzerService(IClaudeService claudeService, IDispla
                 var dotIndex = l.IndexOf('.');
                 var colonIndex = l.IndexOf(':');
                 return new Character(l[1..dotIndex], l[(dotIndex + 2)..colonIndex], l[(colonIndex + 2)..]);
-            }).ToList();
+            }).ToArray();
 
-        var characterId2Name = characterList.Select(x => (x.Id, x.Name)).ToDictionary();
+        var characterId2Name = characters.Select(x => (x.Id, x.Name)).ToDictionary();
         var voiceIdLines = lines.SkipWhile(l => !l.StartsWith("[REVISE VOICE ID]"))
-                                .Where((x, i) => x.StartsWith(i.ToString())) //[REVISE VOICE ID]の分ズレる
-                                .ToArray().AsSpan();
+                                .Where((x, i) => x.StartsWith(i.ToString())); //[REVISE VOICE ID]の分ズレる
 
-        if (voiceIdLines.Length != scriptLines.Count)
+        if (voiceIdLines.Count() != scriptLines.Count)
             throw new EbookException(ExceptionType.ClaudeTalkerAndStyleSettingFailed);
-        for (var i = 0; i < voiceIdLines.Length; i++)
+        foreach (var (voiceIdLine, scriptLine) in voiceIdLines.Zip(scriptLines))
         {
-            var line = voiceIdLines[i].AsSpan();
+            var line = voiceIdLine.AsSpan();
             line = line[(line.IndexOf(' ') + 2)..];//cまで無視
             line = line[..line.IndexOf(' ')];// 二人以上話す時には先頭のものを使う
             if (characterId2Name.TryGetValue(line.ToString(), out var characterName))
             {
-                scriptLines[i].Character = characterName;
+                scriptLine.Character = characterName;
             }
         }
-        return (characterList, characterId2Name);
+        return (characters, characterId2Name);
     }
 
     private class Character
