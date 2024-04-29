@@ -23,7 +23,7 @@ public class CreateCoverFileService : ICreateCoverFileService
             using Font authorFont = new Font("游ゴシック Medium", 75, FontStyle.Bold);
 
             // 色の指定
-            using Brush brush = new SolidBrush(Color.Black);
+            using var brush = Brushes.Black;
 
             // 表示位置の指定
             using StringFormat stringFormat = new StringFormat();
