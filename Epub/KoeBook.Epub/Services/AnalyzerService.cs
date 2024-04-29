@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Text.RegularExpressions;
 using KoeBook.Core;
 using KoeBook.Core.Contracts.Services;

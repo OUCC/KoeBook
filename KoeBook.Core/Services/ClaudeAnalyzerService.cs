@@ -166,10 +166,10 @@ public partial class ClaudeAnalyzerService(IClaudeService claudeService, IDispla
 
         var characterId2Name = characterList.Select(x => (x.Id, x.Name)).ToDictionary();
         var voiceIdLines = lines.SkipWhile(l => !l.StartsWith("[REVISE VOICE ID]"))
-                                .Where((x,i)=>x.StartsWith(i.ToString())) //[REVISE VOICE ID]の分ズレる
+                                .Where((x, i) => x.StartsWith(i.ToString())) //[REVISE VOICE ID]の分ズレる
                                 .ToArray().AsSpan();
 
-        if(voiceIdLines.Length != scriptLines.Count)
+        if (voiceIdLines.Length != scriptLines.Count)
             throw new EbookException(ExceptionType.ClaudeTalkerAndStyleSettingFailed);
         for (var i = 0; i < voiceIdLines.Length; i++)
         {
