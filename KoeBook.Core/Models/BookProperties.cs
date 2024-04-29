@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using KoeBook.Models;
+﻿using KoeBook.Models;
 
 namespace KoeBook.Core.Models;
 
@@ -21,6 +20,7 @@ public class BookProperties
     {
         Id = id;
         Source = aiStory;
+        SourceType = SourceType.AiStory;
     }
 
     public Guid Id { get; }

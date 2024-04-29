@@ -66,7 +66,7 @@ public partial class GenerationTask : ObservableObject
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(StateText))]
-    [NotifyPropertyChangedFor(nameof(SkipEditChangable))]
+    [NotifyPropertyChangedFor(nameof(SkipEditChangeable))]
     [NotifyPropertyChangedFor(nameof(Editable))]
     private GenerationState _state;
 
@@ -79,7 +79,7 @@ public partial class GenerationTask : ObservableObject
         get => _skipEdit;
         set
         {
-            if (_skipEdit != value && SkipEditChangable)
+            if (_skipEdit != value && SkipEditChangeable)
             {
                 OnPropertyChanging(nameof(SkipEdit));
                 _skipEdit = value;
@@ -89,7 +89,7 @@ public partial class GenerationTask : ObservableObject
     }
     private bool _skipEdit;
 
-    public bool SkipEditChangable => State < GenerationState.Editting;
+    public bool SkipEditChangeable => State < GenerationState.Editting;
 
     public bool Editable => State == GenerationState.Editting;
 

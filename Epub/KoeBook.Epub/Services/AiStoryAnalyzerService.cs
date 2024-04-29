@@ -1,5 +1,4 @@
-﻿using KoeBook.Core.Utilities;
-using KoeBook.Epub.Contracts.Services;
+﻿using KoeBook.Epub.Contracts.Services;
 using KoeBook.Epub.Models;
 using KoeBook.Models;
 
