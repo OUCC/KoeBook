@@ -42,7 +42,8 @@ internal static class Startup
                 .AddKeyedSingleton<IScrapingClientService, ScrapingClientService>(nameof(ScrapingNaroService))
                 .AddSingleton<IScraperSelectorService, ScraperSelectorService>()
                 .AddSingleton<IScrapingService, ScrapingAozoraService>()
-                .AddSingleton<IScrapingService, ScrapingNaroService>();
+                .AddSingleton<IScrapingService, ScrapingNaroService>()
+                .AddSingleton<AiStoryAnalyzerService>();
             services.AddSingleton<IEpubCreateService, EpubCreateService>();
             services.AddSingleton<ISplitBraceService, SplitBraceService>();
             services.AddSingleton<IFileExtensionService, FileExtensionService>();

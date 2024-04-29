@@ -9,4 +9,7 @@ public enum SourceType
 
     [EnumMember(Value = "ローカルファイル")]
     FilePath,
+
+    [EnumMember(Value = "AI生成")]
+    AiStory,
 }

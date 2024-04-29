@@ -68,4 +68,7 @@ public enum ExceptionType
     /// </summary>
     [EnumMember(Value = "無効なURLです")]
     InvalidUrl,
+
+    [EnumMember(Value = "不正なXMLです")]
+    InvalidXml,
 }

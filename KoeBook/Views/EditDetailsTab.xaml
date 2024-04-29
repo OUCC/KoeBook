@@ -61,7 +61,7 @@
                             Margin="{StaticResource XXSmallLeftTopRightBottomMargin}"
                             OffContent="編集する"
                             OnContent="編集しない"
-                            IsEnabled="{x:Bind ViewModel.Task.SkipEditChangable, Mode=OneWay}"
+                            IsEnabled="{x:Bind ViewModel.Task.SkipEditChangeable, Mode=OneWay}"
                             IsOn="{x:Bind ViewModel.Task.SkipEdit, Mode=TwoWay}"/>
 
                         <TextBlock
