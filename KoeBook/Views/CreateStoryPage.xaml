@@ -16,9 +16,10 @@
             <ColumnDefinition />
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
-            <RowDefinition />
+            <RowDefinition Height="Auto" />
             <RowDefinition MinHeight="220" />
-            <RowDefinition />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
         <TextBlock
@@ -51,10 +52,12 @@
             <Button
                 Margin="{StaticResource SmallTopMargin}"
                 Content="物語を生成する"
+                Command="{x:Bind ViewModel.CreateStoryCommand}"
                 Width="160"/>
             <Button 
                 Margin="{StaticResource SmallTopMargin}"
                 Content="EPUBを生成する"
+                Command="{x:Bind ViewModel.StartGenerateTaskCommand}"
                 Width="160" />
         </StackPanel>
 
@@ -70,20 +73,32 @@
                 TextWrapping="Wrap"
                 ScrollViewer.VerticalScrollBarVisibility="Auto"
                 Margin="{StaticResource SmallTopMargin}"
-                Text="{x:Bind ViewModel.Instruction, Mode=TwoWay}"
+                Text="{x:Bind ViewModel.Instruction, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                 Height="256" />
         </StackPanel>
 
-        <ScrollView
+        <TextBlock
             Grid.Row="2"
-            Grid.ColumnSpan="2">
-            <StackPanel>
+            Grid.ColumnSpan="2"
+            Style="{StaticResource SubtitleTextBlockStyle}"
+            Text="出力された物語"
+            Margin="{StaticResource SmallTopMargin}" />
 
+        <ScrollView
+            Grid.Row="3"
+            Grid.ColumnSpan="2"
+            Background="{ThemeResource CardBackgroundFillColorDefault}"
+            BorderBrush="{ThemeResource CardStrokeColorDefault}"
+            BorderThickness="1"
+            CornerRadius="12">
+            <StackPanel Padding="16,12,16,24">
                 <TextBlock
-                    Style="{StaticResource  SubtitleTextBlockStyle}"
-                    Text="出力された物語"
-                    Margin="{StaticResource SmallTopMargin}" />
-
+                    Style="{StaticResource SubtitleTextBlockStyle}"
+                    Text="{x:Bind ViewModel.AiStoryTitle, Mode=OneWay}" />
+                <TextBlock
+                    x:Name="StoryContnent"
+                    Margin="{StaticResource XSmallTopMargin}"
+                    TextWrapping="Wrap"/>
             </StackPanel>
         </ScrollView>
     </Grid>

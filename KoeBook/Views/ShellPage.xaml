@@ -2,12 +2,7 @@
     x:Class="KoeBook.Views.ShellPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:local="using:KoeBook.Views"
-    xmlns:helpers="using:KoeBook.Helpers"
-    xmlns:behaviors="using:KoeBook.Behaviors"
-    xmlns:i="using:Microsoft.Xaml.Interactivity"
     Loaded="OnLoaded">
     
     <Grid>
@@ -28,7 +23,10 @@
                 <TabViewItem
                     x:Name="CreateStoryPageTab"
                     IsClosable="False"
-                    Header="作成">
+                    Header="AIストーリー">
+                    <TabViewItem.IconSource>
+                        <SymbolIconSource Symbol="Add" />
+                    </TabViewItem.IconSource>
                     <local:CreateStoryPage Margin="20,10,20,10" />
                 </TabViewItem>
             </TabView.TabItems>

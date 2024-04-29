@@ -3,23 +3,21 @@
 namespace KoeBook.Models;
 
 [XmlRoot("Book")]
-public record AiStory(
-    [property: XmlElement("Title", typeof(string), IsNullable = false)] string Title,
-    [property: XmlArray("Content", IsNullable = false), XmlArrayItem("Section", IsNullable = false)] AiStory.Section[] Sections)
+public class AiStory
 {
-    private AiStory() : this("", []) { }
 
-    public record Section(
-        [property: XmlArrayItem("Paragraph", IsNullable = false)] Paragraph[] Paragraphs)
-    {
-        private Section() : this([]) { }
-    }
+    [XmlElement("Title", typeof(string), IsNullable = false)]
+    public string Title { get; init; } = "";
 
+    [XmlArray("Content", IsNullable = false)]
+    [XmlArrayItem("Section", IsNullable = false)]
+    [XmlArrayItem("Paragraph", IsNullable = false, NestingLevel = 1)]
+    public Line[][] Lines { get; init; } = [];
 
-    public record Paragraph(
+    public record Line(
         [property: XmlElement("Text", typeof(TextElement), IsNullable = false), XmlElement("Ruby", typeof(Ruby), IsNullable = false)] InlineElement[] Inlines)
     {
-        private Paragraph() : this([]) { }
+        private Line() : this([]) { }
 
         public string GetText() => string.Concat(Inlines.Select(e => e.Text));
 

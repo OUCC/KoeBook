@@ -1,19 +1,22 @@
 ﻿using System.Collections.Immutable;
+using System.Xml.Serialization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using KoeBook.Contracts.Services;
 using KoeBook.Core.Contracts.Services;
 using KoeBook.Core.Models;
-using KoeBook.Services;
+using KoeBook.Models;
 
 namespace KoeBook.ViewModels;
 
 public sealed partial class CreateStoryViewModel : ObservableObject
 {
+    private readonly IGenerationTaskService _generationTaskService;
+    private readonly IDialogService _dialogService;
     private readonly IStoryCreaterService _storyCreaterService;
-    private readonly GenerationTaskRunnerService _generationTaskRunnerService;
 
     public ImmutableArray<StoryGenre> Genres { get; } = [
-            new("青春小説", "学校生活、友情、恋愛など、若者の成長物語"),
+        new("青春小説", "学校生活、友情、恋愛など、若者の成長物語"),
         new("ミステリー・サスペンス", "謎解きや犯罪、真相究明などのスリリングな物語"),
         new("SF", "未来、科学技術、宇宙などを題材にした物語"),
         new("ホラー", "恐怖や怪奇現象を扱った、読者の恐怖心をくすぐる物語"),
@@ -28,27 +31,22 @@ public sealed partial class CreateStoryViewModel : ObservableObject
     private StoryGenre _selectedGenre;
 
     [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(CreateStoryCommand))]
     private string _instruction = "";
 
     [ObservableProperty]
-    private string _storyText = """
-        # h1
-        ## h2
-        ### h3
+    [NotifyCanExecuteChangedFor(nameof(StartGenerateTaskCommand))]
+    [NotifyPropertyChangedFor(nameof(AiStoryTitle))]
+    private AiStory? _aiStory;
 
-        1. aaa
-        2. bbb
-        3. ccc
+    public string AiStoryTitle => AiStory?.Title ?? "";
 
-        ---
-        """;
-
-    public CreateStoryViewModel(GenerationTaskRunnerService generationTaskRunnerService)
+    public CreateStoryViewModel(IGenerationTaskService generationTaskService, IDialogService dialogService, IStoryCreaterService storyCreaterService)
     {
         _selectedGenre = Genres[0];
-        _generationTaskRunnerService = generationTaskRunnerService;
-        //_storyCreaterService = storyCreaterService;
-        _storyCreaterService = null!;
+        _generationTaskService = generationTaskService;
+        _dialogService = dialogService;
+        _storyCreaterService = storyCreaterService;
     }
 
     public bool CanCreateStory => !string.IsNullOrWhiteSpace(Instruction);
@@ -56,12 +54,26 @@ public sealed partial class CreateStoryViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(CanCreateStory))]
     private async Task OnCreateStoryAsync(CancellationToken cancellationToken)
     {
-        StoryText = await _storyCreaterService.CreateStoryAsync(SelectedGenre, Instruction, cancellationToken);
+        using var sr = new StringReader(await _storyCreaterService.CreateStoryAsync(SelectedGenre, Instruction, cancellationToken));
+        var serializer = new XmlSerializer(typeof(AiStory));
+        try
+        {
+            AiStory = (AiStory?)serializer.Deserialize(sr);
+        }
+        catch (InvalidOperationException)
+        {
+            await _dialogService.ShowAsync("生成失敗", "AIによるコードの生成に失敗しました", "OK", cancellationToken);
+        }
     }
 
-    [RelayCommand]
-    private async void OnStartGenerateTask(CancellationToken cancellationToken)
+    public bool CanStartGenerate => AiStory is not null;
+
+    [RelayCommand(CanExecute = nameof(CanStartGenerate))]
+    private void OnStartGenerateTask()
     {
+        var aiStory = AiStory!;
+        AiStory = null;
+        _generationTaskService.Register(new GenerationTask(Guid.NewGuid(), aiStory, true));
     }
 }
 
