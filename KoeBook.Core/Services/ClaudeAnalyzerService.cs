@@ -36,7 +36,7 @@ public partial class ClaudeAnalyzerService(IClaudeService claudeService, IDispla
             },
                 cancellationToken: cancellationToken
             );
-            (var characters, var characterId2Name) = ExtractCharacterList(message1.ToString(), scriptLines);
+            var (characters, characterId2Name) = ExtractCharacterList(message1.ToString(), scriptLines);
             progress.IncrementProgress();
 
             var message2 = await _claudeService.Messages.CreateAsync(new()
