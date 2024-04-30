@@ -30,10 +30,9 @@ public class CreateCoverFileService : ICreateCoverFileService
             // 表示位置の指定
             using var stringFormat = new StringFormat()
             {
-                Alignment = StringAlignment.Center, 
+                Alignment = StringAlignment.Center,
                 LineAlignment = StringAlignment.Center
             };
-            
 
             // 文字の入力
             graphics.DrawString(title, titleFont, brush, new Rectangle(0, 0, 1600, 1920), stringFormat);
