@@ -3,7 +3,7 @@ using KoeBook.Core.Models;
 
 namespace KoeBook.Services.CoreMocks
 {
-    public class StoryCreaterServiceMock : IStoryCreaterService
+    public class StoryCreatorServiceMock : IStoryCreatorService
     {
         public ValueTask<string> CreateStoryAsync(StoryGenre genre, string instruction, CancellationToken cancellationToken)
         {

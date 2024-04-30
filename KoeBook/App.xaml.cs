@@ -110,7 +110,7 @@ public partial class App : Application
                 if (mockOptions.ISoundGenerationService.HasValue && mockOptions.ISoundGenerationService.Value)
                     services.AddSingleton<ISoundGenerationService, SoundGenerationServiceMock>();
                 if (mockOptions.IStoryCreaterService.HasValue && mockOptions.IStoryCreaterService.Value)
-                    services.AddSingleton<IStoryCreaterService, StoryCreaterServiceMock>();
+                    services.AddSingleton<IStoryCreatorService, StoryCreatorServiceMock>();
             })
             .Build();
 

@@ -13,7 +13,7 @@ public sealed partial class CreateStoryViewModel : ObservableObject
 {
     private readonly IGenerationTaskService _generationTaskService;
     private readonly IDialogService _dialogService;
-    private readonly IStoryCreaterService _storyCreaterService;
+    private readonly IStoryCreatorService _storyCreatorService;
 
     public ImmutableArray<StoryGenre> Genres { get; } = [
         new("青春小説", "学校生活、友情、恋愛など、若者の成長物語"),
@@ -41,12 +41,12 @@ public sealed partial class CreateStoryViewModel : ObservableObject
 
     public string AiStoryTitle => AiStory?.Title ?? "";
 
-    public CreateStoryViewModel(IGenerationTaskService generationTaskService, IDialogService dialogService, IStoryCreaterService storyCreaterService)
+    public CreateStoryViewModel(IGenerationTaskService generationTaskService, IDialogService dialogService, IStoryCreatorService storyCreatorService)
     {
         _selectedGenre = Genres[0];
         _generationTaskService = generationTaskService;
         _dialogService = dialogService;
-        _storyCreaterService = storyCreaterService;
+        _storyCreatorService = storyCreatorService;
     }
 
     public bool CanCreateStory => !string.IsNullOrWhiteSpace(Instruction);
@@ -54,7 +54,7 @@ public sealed partial class CreateStoryViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(CanCreateStory))]
     private async Task OnCreateStoryAsync(CancellationToken cancellationToken)
     {
-        using var sr = new StringReader(await _storyCreaterService.CreateStoryAsync(SelectedGenre, Instruction, cancellationToken));
+        using var sr = new StringReader(await _storyCreatorService.CreateStoryAsync(SelectedGenre, Instruction, cancellationToken));
         var serializer = new XmlSerializer(typeof(AiStory));
         try
         {
