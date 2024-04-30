@@ -40,7 +40,7 @@ public sealed partial class CreateStoryPage : Page
                 l.SelectMany(l =>
                     l.Inlines.Select(Inline (inline) => inline switch
                     {
-                        AiStory.TextElement text => new Run() { Text = text.InnerText },
+                        AiStory.Text text => new Run() { Text = text.InnerText },
                         AiStory.Ruby ruby => new Run() { Text = ruby.Rt },
                         _ => throw new UnreachableException(),
                     }).Append(new LineBreak())

@@ -15,26 +15,26 @@ public class AiStory
     public Line[][] Lines { get; init; } = [];
 
     public record Line(
-        [property: XmlElement("Text", typeof(TextElement), IsNullable = false), XmlElement("Ruby", typeof(Ruby), IsNullable = false)] InlineElement[] Inlines)
+        [property: XmlElement("Text", typeof(Text), IsNullable = false), XmlElement("Ruby", typeof(Ruby), IsNullable = false)] InlineElement[] Inlines)
     {
         private Line() : this([]) { }
 
-        public string GetText() => string.Concat(Inlines.Select(e => e.Text));
+        public string GetText() => string.Concat(Inlines.Select(e => e.Html));
 
         public string GetScript() => string.Concat(Inlines.Select(e => e.Script));
     }
 
     public abstract record class InlineElement
     {
-        public abstract string Text { get; }
+        public abstract string Html { get; }
         public abstract string Script { get; }
     }
 
-    public record TextElement([property: XmlText] string InnerText) : InlineElement
+    public record Text([property: XmlText] string InnerText) : InlineElement
     {
-        private TextElement() : this("") { }
+        private Text() : this("") { }
 
-        public override string Text => InnerText;
+        public override string Html => InnerText;
         public override string Script => InnerText;
     }
 
@@ -44,7 +44,7 @@ public class AiStory
     {
         private Ruby() : this("", "") { }
 
-        public override string Text => Rb;
+        public override string Html => $"<ruby>{Rb}<rt>{Rt}</rt></ruby>";
         public override string Script => Rt;
     }
 }
