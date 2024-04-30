@@ -20,6 +20,7 @@ public sealed partial class ShellPage : Page
         InitializeComponent();
 
         TabHelper.SetNavigateTo(MainPageTab, MainPage.Id);
+        TabHelper.SetNavigateTo(CreateStoryPageTab, CreateStoryPage.Id);
 
         ViewModel.TabViewService.Initialize(MainTabView);
         App.MainWindow.ExtendsContentIntoTitleBar = true;

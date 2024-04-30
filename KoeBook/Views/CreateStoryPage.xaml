@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="KoeBook.Views.CreateStoryPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:models="using:KoeBook.Core.Models"
+    mc:Ignorable="d">
+
+    <Grid RowSpacing="8">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="240" />
+            <ColumnDefinition />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition MinHeight="220" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <TextBlock
+            Grid.ColumnSpan="2"
+            Style="{StaticResource TitleTextBlockStyle}"
+            Text="物語をAIで生成する"/>
+
+        <StackPanel
+            Grid.Row="1"
+            Margin="5">
+            <TextBlock
+                Style="{StaticResource SubtitleTextBlockStyle}"
+                Text="ジャンル"/>
+            <ComboBox
+                Margin="{StaticResource SmallTopMargin}"
+                Width="200"
+                ItemsSource="{x:Bind ViewModel.Genres}"
+                SelectedValue="{x:Bind ViewModel.SelectedGenre, Mode=TwoWay}">
+                <ComboBox.ItemTemplate>
+                    <DataTemplate x:DataType="models:StoryGenre">
+                        <TextBlock Text="{x:Bind Genre}" ToolTipService.ToolTip="{x:Bind Description}" />
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
+            </ComboBox>
+
+            <TextBlock
+                Style="{StaticResource SubtitleTextBlockStyle}"
+                Margin="{StaticResource  MediumTopMargin}"
+                Text="生成"/>
+            <Button
+                Margin="{StaticResource SmallTopMargin}"
+                Content="物語を生成する"
+                Command="{x:Bind ViewModel.CreateStoryCommand}"
+                Width="160"/>
+            <Button 
+                Margin="{StaticResource SmallTopMargin}"
+                Content="EPUBを生成する"
+                Command="{x:Bind ViewModel.StartGenerateTaskCommand}"
+                Width="160" />
+        </StackPanel>
+
+        <StackPanel
+            Grid.Column="1"
+            Grid.Row="1">
+            <TextBlock
+                Style="{StaticResource SubtitleTextBlockStyle}"
+                Text="物語の概要" />
+            <TextBox
+                FontSize="16"
+                AcceptsReturn="True"
+                TextWrapping="Wrap"
+                ScrollViewer.VerticalScrollBarVisibility="Auto"
+                Margin="{StaticResource SmallTopMargin}"
+                Text="{x:Bind ViewModel.Instruction, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                Height="256" />
+        </StackPanel>
+
+        <TextBlock
+            Grid.Row="2"
+            Grid.ColumnSpan="2"
+            Style="{StaticResource SubtitleTextBlockStyle}"
+            Text="出力された物語"
+            Margin="{StaticResource SmallTopMargin}" />
+
+        <ScrollView
+            Grid.Row="3"
+            Grid.ColumnSpan="2"
+            Background="{ThemeResource CardBackgroundFillColorDefault}"
+            BorderBrush="{ThemeResource CardStrokeColorDefault}"
+            BorderThickness="1"
+            CornerRadius="12">
+            <StackPanel Padding="16,12,16,24">
+                <TextBlock
+                    Style="{StaticResource SubtitleTextBlockStyle}"
+                    Text="{x:Bind ViewModel.AiStoryTitle, Mode=OneWay}" />
+                <TextBlock
+                    x:Name="StoryContnent"
+                    Margin="{StaticResource XSmallTopMargin}"
+                    TextWrapping="Wrap"/>
+            </StackPanel>
+        </ScrollView>
+    </Grid>
+</Page>

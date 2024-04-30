@@ -9,4 +9,6 @@ internal class MockOptions
     public bool? IAnalyzerService { get; set; }
 
     public bool? IEpubGenerateService { get; set; }
+
+    public bool? IStoryCreaterService { get; set; }
 }
