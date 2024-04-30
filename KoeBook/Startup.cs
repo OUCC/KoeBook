@@ -33,8 +33,8 @@ internal static class Startup
             services.AddSingleton<IEpubGenerateService, EpubGenerateService>();
             services.AddSingleton<IEpubDocumentStoreService, EpubDocumentStoreService>();
             services.AddSingleton<IAnalyzerService, AnalyzerService>();
-            services.AddSingleton<ILlmAnalyzerService, ChatGptAnalyzerService>();
-            services.AddSingleton<OpenAI.Interfaces.IOpenAIService, MyOpenAiService>();
+            services.AddSingleton<ILlmAnalyzerService, ClaudeAnalyzerService>();
+            services.AddSingleton<IClaudeService, ClaudeService>();
 
             // Epub Services
             services

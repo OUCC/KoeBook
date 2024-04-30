@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Collections.Immutable;
+using System.Text;
 using System.Text.RegularExpressions;
 using KoeBook.Core.Contracts.Services;
 using KoeBook.Core.Helpers;
@@ -13,8 +14,20 @@ public partial class ChatGptAnalyzerService(IOpenAIService openAIService, IDispl
     private readonly IOpenAIService _openAiService = openAIService;
     private readonly IDisplayStateChangeService _displayStateChangeService = displayStateChangeService;
 
-    public async ValueTask<BookScripts> LlmAnalyzeScriptLinesAsync(BookProperties bookProperties, List<ScriptLine> scriptLines, List<string> chunks, CancellationToken cancellationToken)
+    public async ValueTask<BookScripts> LlmAnalyzeScriptLinesAsync(BookProperties bookProperties, ScriptLine[] scriptLines, CancellationToken cancellationToken)
     {
+        var chunks = new List<string>();
+        var chunk = new StringBuilder();
+        foreach (var line in scriptLines)
+        {
+            if (chunk.Length + line.Text.Length > 800)
+            {
+                chunks.Add(chunk.ToString());
+                chunk.Clear();
+            }
+            chunk.AppendLine(line.Text);
+        }
+        if (chunk.Length > 0) chunks.Add(chunk.ToString());
         var progress = _displayStateChangeService.ResetProgress(bookProperties, GenerationState.Analyzing, chunks.Count);
         Queue<string> summaryList = new();
         Queue<string> characterList = new();
@@ -38,7 +51,7 @@ public partial class ChatGptAnalyzerService(IOpenAIService openAIService, IDispl
                 summary1 = summaryList.Dequeue();
                 characters1 = characterList.Dequeue();
             }
-            var Task2 = SummaryCharacterListAnalysisAsync(scriptLines, chunks, summary1, characters1, i, cancellationToken);
+            var Task2 = SummaryCharacterListAnalysisAsync(chunks, summary1, characters1, i, cancellationToken);
             // WhenAllで非同期処理を待つ
             await Task.WhenAll(Task1, Task2);
             currentLineIndex += chunks[i].Split("\n").Length - 1;
@@ -60,12 +73,12 @@ public partial class ChatGptAnalyzerService(IOpenAIService openAIService, IDispl
             }
         )
         {
-            ScriptLines = scriptLines
+            ScriptLines = [.. scriptLines]
         };
         return bookScripts;
     }
 
-    private async Task CharacterStyleAnalysisAsync(List<ScriptLine> scriptLines,
+    private async Task CharacterStyleAnalysisAsync(ScriptLine[] scriptLines,
                                                    List<string> chunks,
                                                    string summary,
                                                    string characterList,
@@ -77,8 +90,8 @@ public partial class ChatGptAnalyzerService(IOpenAIService openAIService, IDispl
 RESTART:
         var completionResult = await _openAiService.ChatCompletion.CreateCompletion(new ChatCompletionCreateRequest
         {
-            Messages = new List<ChatMessage>
-            {
+            Messages =
+            [
                 ChatMessage.FromSystem($$"""
                     All Information
                     - Goal
@@ -144,15 +157,15 @@ RESTART:
                     ```
                     """
                     )
-            },
+            ],
             Model = OpenAI.ObjectModels.Models.Gpt_4_turbo_preview,
             MaxTokens = 4000
-        });
+        }, cancellationToken: cancellationToken);
         if (completionResult.Successful)
         {
             var result = completionResult.Choices.First().Message.Content;
             // "#### Talker and Style Setting"以下の文章を改行区切りでリスト化
-            List<string> output = new List<string>();
+            var output = new List<string>();
             var lines = result?.Split("\n");
             var start = false;
             for (var i = 0; i < lines?.Length; i++)
@@ -200,7 +213,7 @@ RESTART:
         }
     }
 
-    private async Task<(string summary, string characterList)> SummaryCharacterListAnalysisAsync(List<ScriptLine> scriptLines,
+    private async Task<(string summary, string characterList)> SummaryCharacterListAnalysisAsync(
                                                          List<string> chunks,
                                                          string summary,
                                                          string characterList,
@@ -210,8 +223,8 @@ RESTART:
         var storyText = string.Join("\n", chunks.Skip(int.Max(0, idx - 4)).Take(4));
         var completionResult = await _openAiService.ChatCompletion.CreateCompletion(new ChatCompletionCreateRequest
         {
-            Messages = new List<ChatMessage>
-            {
+            Messages =
+            [
                 ChatMessage.FromSystem($$"""
                     All Information
                     - Goal
@@ -252,16 +265,16 @@ RESTART:
                     ...
 
 
-                    #### Summery of {{Math.Min(20,(idx+1)*5)}} points
+                    #### Summery of {{Math.Min(20, (idx + 1) * 5)}} points
                     - {summary1}
                     - {summary2}
                     ...
                     ```
                     """),
-            },
+            ],
             Model = OpenAI.ObjectModels.Models.Gpt_4_turbo_preview,
             MaxTokens = 4000
-        });
+        }, cancellationToken: cancellationToken);
         if (completionResult.Successful)
         {
             var result = completionResult.Choices.First().Message.Content;
@@ -308,15 +321,15 @@ RESTART:
         }
     }
 
-    private async Task<Dictionary<string, string>> GetCharacterVoiceMappingAsync(List<ScriptLine> scriptLines, string characterDescription, CancellationToken cancellationToken)
+    private async Task<Dictionary<string, string>> GetCharacterVoiceMappingAsync(ScriptLine[] scriptLines, string characterDescription, CancellationToken cancellationToken)
     {
         // キャラクター名一覧の取得
         var characterList = scriptLines.Select(x => "- " + x.Character).Distinct().ToList();
         var characterListString = string.Join("\n", characterList);
         var completionResult = await _openAiService.ChatCompletion.CreateCompletion(new ChatCompletionCreateRequest
         {
-            Messages = new List<ChatMessage>
-            {
+            Messages =
+            [
                 ChatMessage.FromSystem($$"""
                 All Information
                     - Goal
@@ -353,15 +366,15 @@ RESTART:
                 ...
                 ```
                 """)
-            },
+            ],
             Model = OpenAI.ObjectModels.Models.Gpt_4_turbo_preview,
             MaxTokens = 4000
-        });
+        }, cancellationToken: cancellationToken);
         if (completionResult.Successful)
         {
             var result = completionResult.Choices.First().Message.Content;
             var lines = result?.Split("\n");
-            Dictionary<string, string> characterVoiceMapping = new();
+            Dictionary<string, string> characterVoiceMapping = [];
             foreach (var match in from line in lines
                                   let match = CharacterMappingRegex().Match(line)
                                   select match)

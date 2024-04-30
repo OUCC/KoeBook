@@ -1,4 +1,6 @@
-﻿namespace KoeBook.Core.Models;
+﻿using System.Collections.Immutable;
+
+namespace KoeBook.Core.Models;
 
 /// <summary>
 /// 本の読み上げ情報
@@ -15,5 +17,5 @@ public class BookScripts(BookProperties bookProperties, BookOptions options)
     /// <summary>
     /// 読み上げテキストの配列
     /// </summary>
-    public required IReadOnlyList<ScriptLine> ScriptLines { get; set; }
+    public required ImmutableArray<ScriptLine> ScriptLines { get; set; }
 }
