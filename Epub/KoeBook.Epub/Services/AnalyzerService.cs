@@ -63,11 +63,11 @@ public partial class AnalyzerService(
                 var line = ReplaceBaseTextWithRuby(p.Text);
 
                 return p.ScriptLine = new ScriptLine(line, "", "");
-            }).ToArray();
+            }).Where(l => !string.IsNullOrEmpty(l.Text))
+            .ToArray();
 
         // LLMによる話者、スタイル解析
         var bookScripts = await _llmAnalyzerService.LlmAnalyzeScriptLinesAsync(bookProperties, scriptLines, cancellationToken)!;
-
         return bookScripts;
     }
 

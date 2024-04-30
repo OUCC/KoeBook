@@ -3,40 +3,38 @@
 namespace KoeBook.Models;
 
 [XmlRoot("Book")]
-public record AiStory(
-    [property: XmlElement("Title", typeof(string), IsNullable = false)] string Title,
-    [property: XmlArray("Content", IsNullable = false), XmlArrayItem("Section", IsNullable = false)] AiStory.Section[] Sections)
+public class AiStory
 {
-    private AiStory() : this("", []) { }
 
-    public record Section(
-        [property: XmlArrayItem("Paragraph", IsNullable = false)] Paragraph[] Paragraphs)
+    [XmlElement("Title", typeof(string), IsNullable = false)]
+    public string Title { get; init; } = "";
+
+    [XmlArray("Content", IsNullable = false)]
+    [XmlArrayItem("Section", IsNullable = false)]
+    [XmlArrayItem("Paragraph", IsNullable = false, NestingLevel = 1)]
+    public Line[][] Lines { get; init; } = [];
+
+    public record Line(
+        [property: XmlElement("Text", typeof(Text), IsNullable = false), XmlElement("Ruby", typeof(Ruby), IsNullable = false)] InlineElement[] Inlines)
     {
-        private Section() : this([]) { }
-    }
+        private Line() : this([]) { }
 
-
-    public record Paragraph(
-        [property: XmlElement("Text", typeof(TextElement), IsNullable = false), XmlElement("Ruby", typeof(Ruby), IsNullable = false)] InlineElement[] Inlines)
-    {
-        private Paragraph() : this([]) { }
-
-        public string GetText() => string.Concat(Inlines.Select(e => e.Text));
+        public string GetText() => string.Concat(Inlines.Select(e => e.Html));
 
         public string GetScript() => string.Concat(Inlines.Select(e => e.Script));
     }
 
     public abstract record class InlineElement
     {
-        public abstract string Text { get; }
+        public abstract string Html { get; }
         public abstract string Script { get; }
     }
 
-    public record TextElement([property: XmlText] string InnerText) : InlineElement
+    public record Text([property: XmlText] string InnerText) : InlineElement
     {
-        private TextElement() : this("") { }
+        private Text() : this("") { }
 
-        public override string Text => InnerText;
+        public override string Html => InnerText;
         public override string Script => InnerText;
     }
 
@@ -46,7 +44,7 @@ public record AiStory(
     {
         private Ruby() : this("", "") { }
 
-        public override string Text => Rb;
+        public override string Html => $"<ruby>{Rb}<rt>{Rt}</rt></ruby>";
         public override string Script => Rt;
     }
 }
