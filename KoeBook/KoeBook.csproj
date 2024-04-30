@@ -18,6 +18,7 @@
     <None Remove="Components\Dialog\DialogContentControl.xaml" />
     <None Remove="Components\Dialog\SharedContentDialog.xaml" />
     <None Remove="Components\StateProgressBar.xaml" />
+    <None Remove="Views\CreateStoryPage.xaml" />
     <None Remove="Views\EditDetailsTab.xaml" />
   </ItemGroup>
 
@@ -68,4 +69,12 @@
   <PropertyGroup Condition="'$(DisableHasPackageAndPublishMenuAddedByProject)'!='true' and '$(EnableMsixTooling)'=='true'">
     <HasPackageAndPublishMenu>true</HasPackageAndPublishMenu>
   </PropertyGroup>
+  
+  <ItemGroup>
+    <CustomAdditionalCompileInputs Remove="Views\CreateStoryPage.xaml" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <Resource Remove="Views\CreateStoryPage.xaml" />
+  </ItemGroup>
 </Project>
