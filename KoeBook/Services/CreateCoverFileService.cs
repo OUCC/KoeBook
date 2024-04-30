@@ -28,9 +28,12 @@ public class CreateCoverFileService : ICreateCoverFileService
             using var brush = Brushes.Black;
 
             // 表示位置の指定
-            using var stringFormat = new StringFormat();
-            stringFormat.Alignment = StringAlignment.Center;
-            stringFormat.LineAlignment = StringAlignment.Center;
+            using var stringFormat = new StringFormat()
+            {
+                Alignment = StringAlignment.Center, 
+                LineAlignment = StringAlignment.Center
+            };
+            
 
             // 文字の入力
             graphics.DrawString(title, titleFont, brush, new Rectangle(0, 0, 1600, 1920), stringFormat);
@@ -38,8 +41,6 @@ public class CreateCoverFileService : ICreateCoverFileService
 
             // png として出力
             bitmap.Save(Path.Combine(coverFilePath, "Cover.png"), ImageFormat.Png);
-
-            return;
         }
         catch (Exception ex)
         {
