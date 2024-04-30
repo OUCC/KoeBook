@@ -44,7 +44,7 @@ public class CreateCoverFileService : ICreateCoverFileService
         }
         catch (Exception ex)
         {
-            throw new EbookException(ExceptionType.CreateCoverFileFailed, ex.Message);
+            throw new EbookException(ExceptionType.CreateCoverFileFailed, ex.Message, ex);
         }
 
     }
