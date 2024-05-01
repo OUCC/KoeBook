@@ -3,11 +3,11 @@ using KoeBook.Core.Models;
 
 namespace KoeBook.Core.Services;
 
-internal class ClaudeStoryGeneratorService(IClaudeService claudeService) : ILlmStoryGeneratorService
+public class ClaudeStoryGeneratorService(IClaudeService claudeService) : IStoryCreatorService
 {
     private readonly IClaudeService _claudeService = claudeService;
 
-    public async ValueTask<string> GenerateStoryAsync(StoryGenre storyGenre, string premise, CancellationToken cancellationToken)
+    public async ValueTask<string> CreateStoryAsync(StoryGenre storyGenre, string premise, CancellationToken cancellationToken)
     {
         if (_claudeService.Messages is null)
         {

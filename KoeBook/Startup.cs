@@ -43,7 +43,8 @@ internal static class Startup
                 .AddSingleton<IScraperSelectorService, ScraperSelectorService>()
                 .AddSingleton<IScrapingService, ScrapingAozoraService>()
                 .AddSingleton<IScrapingService, ScrapingNaroService>()
-                .AddSingleton<AiStoryAnalyzerService>();
+                .AddSingleton<AiStoryAnalyzerService>()
+                .AddSingleton<IStoryCreatorService, ClaudeStoryGeneratorService>();
             services.AddSingleton<IEpubCreateService, EpubCreateService>();
             services.AddSingleton<ISplitBraceService, SplitBraceService>();
             services.AddSingleton<IFileExtensionService, FileExtensionService>();
