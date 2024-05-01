@@ -4,27 +4,57 @@ using KoeBook.Core.Models;
 
 namespace KoeBook.Models;
 
-public partial class GenerationTask(Guid id, string source, SourceType sourceType, bool skipEdit) : ObservableObject
+public partial class GenerationTask : ObservableObject
 {
-    public Guid Id { get; } = id;
+    public GenerationTask(Guid id, string source, SourceType sourceType, bool skipEdit)
+    {
+        if (sourceType != SourceType.FilePath && sourceType != SourceType.Url)
+            throw new ArgumentException($"{nameof(sourceType)}は{nameof(SourceType.FilePath)}か{nameof(SourceType.Url)}である必要があります。");
+        Id = id;
+        _rawSource = source;
+        SourceType = sourceType;
+        _skipEdit = skipEdit;
+        _title = sourceType == SourceType.FilePath ? Path.GetFileName(source) : source;
+    }
+
+    public GenerationTask(Guid id, AiStory aiStory, bool skipEdit)
+    {
+        Id = id;
+        _rawSource = aiStory;
+        SourceType = SourceType.AiStory;
+        _skipEdit = skipEdit;
+        _title = aiStory.Title;
+    }
+
+    public BookProperties ToBookProperties()
+    {
+        return SourceType == SourceType.AiStory
+            ? new BookProperties(Id, (AiStory)_rawSource)
+            : new BookProperties(Id, Source, SourceType);
+    }
+
+    public Guid Id { get; }
 
     public CancellationTokenSource CancellationTokenSource { get; } = new();
 
     public CancellationToken CancellationToken => CancellationTokenSource.Token;
 
-    public string Source { get; } = source;
+    public string Source => _rawSource is string uri ? uri : "AI生成";
 
-    public SourceType SourceType { get; } = sourceType;
+    private readonly object _rawSource;
+
+    public SourceType SourceType { get; }
 
     public string SourceDescription => SourceType switch
     {
         SourceType.Url => "URL",
         SourceType.FilePath => "ファイルパス",
+        SourceType.AiStory => "AI生成",
         _ => string.Empty,
     };
 
     [ObservableProperty]
-    private string _title = sourceType == SourceType.FilePath ? Path.GetFileName(source) : source;
+    private string _title;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ProgressText))]
@@ -36,7 +66,7 @@ public partial class GenerationTask(Guid id, string source, SourceType sourceTyp
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(StateText))]
-    [NotifyPropertyChangedFor(nameof(SkipEditChangable))]
+    [NotifyPropertyChangedFor(nameof(SkipEditChangeable))]
     [NotifyPropertyChangedFor(nameof(Editable))]
     private GenerationState _state;
 
@@ -49,7 +79,7 @@ public partial class GenerationTask(Guid id, string source, SourceType sourceTyp
         get => _skipEdit;
         set
         {
-            if (_skipEdit != value && SkipEditChangable)
+            if (_skipEdit != value && SkipEditChangeable)
             {
                 OnPropertyChanging(nameof(SkipEdit));
                 _skipEdit = value;
@@ -57,9 +87,9 @@ public partial class GenerationTask(Guid id, string source, SourceType sourceTyp
             }
         }
     }
-    private bool _skipEdit = skipEdit;
+    private bool _skipEdit;
 
-    public bool SkipEditChangable => State < GenerationState.Editting;
+    public bool SkipEditChangeable => State < GenerationState.Editting;
 
     public bool Editable => State == GenerationState.Editting;
 

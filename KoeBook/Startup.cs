@@ -33,8 +33,8 @@ internal static class Startup
             services.AddSingleton<IEpubGenerateService, EpubGenerateService>();
             services.AddSingleton<IEpubDocumentStoreService, EpubDocumentStoreService>();
             services.AddSingleton<IAnalyzerService, AnalyzerService>();
-            services.AddSingleton<ILlmAnalyzerService, ChatGptAnalyzerService>();
-            services.AddSingleton<OpenAI.Interfaces.IOpenAIService, MyOpenAiService>();
+            services.AddSingleton<ILlmAnalyzerService, ClaudeAnalyzerService>();
+            services.AddSingleton<IClaudeService, ClaudeService>();
 
             // Epub Services
             services
@@ -42,7 +42,8 @@ internal static class Startup
                 .AddKeyedSingleton<IScrapingClientService, ScrapingClientService>(nameof(ScrapingNaroService))
                 .AddSingleton<IScraperSelectorService, ScraperSelectorService>()
                 .AddSingleton<IScrapingService, ScrapingAozoraService>()
-                .AddSingleton<IScrapingService, ScrapingNaroService>();
+                .AddSingleton<IScrapingService, ScrapingNaroService>()
+                .AddSingleton<AiStoryAnalyzerService>();
             services.AddSingleton<IEpubCreateService, EpubCreateService>();
             services.AddSingleton<ISplitBraceService, SplitBraceService>();
             services.AddSingleton<IFileExtensionService, FileExtensionService>();

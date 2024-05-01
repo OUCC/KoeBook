@@ -6,7 +6,6 @@ using KoeBook.Core;
 using KoeBook.Core.Contracts.Services;
 using KoeBook.Core.Services;
 using KoeBook.Core.Services.Mocks;
-using KoeBook.Epub;
 using KoeBook.Epub.Contracts.Services;
 using KoeBook.Epub.Services;
 using KoeBook.Models;
@@ -93,6 +92,8 @@ public partial class App : Application
                 services.AddTransient<ShellPage>();
                 services.AddTransient<ShellViewModel>();
                 services.AddTransient<EditDetailsViewModel>();
+                services.AddTransient<CreateStoryPage>();
+                services.AddTransient<CreateStoryViewModel>();
 
                 // Configuration
                 services.Configure<LocalSettingsOptions>(context.Configuration.GetSection(nameof(LocalSettingsOptions)));
@@ -107,6 +108,8 @@ public partial class App : Application
                     services.AddSingleton<ISoundGenerationSelectorService, SoundGenerationSelectorServiceMock>();
                 if (mockOptions.ISoundGenerationService.HasValue && mockOptions.ISoundGenerationService.Value)
                     services.AddSingleton<ISoundGenerationService, SoundGenerationServiceMock>();
+                if (mockOptions.IStoryCreaterService.HasValue && mockOptions.IStoryCreaterService.Value)
+                    services.AddSingleton<IStoryCreatorService, StoryCreatorServiceMock>();
             })
             .Build();
 
