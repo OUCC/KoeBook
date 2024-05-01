@@ -6,7 +6,6 @@ using KoeBook.Core;
 using KoeBook.Core.Contracts.Services;
 using KoeBook.Core.Services;
 using KoeBook.Core.Services.Mocks;
-using KoeBook.Epub;
 using KoeBook.Epub.Contracts.Services;
 using KoeBook.Epub.Services;
 using KoeBook.Models;

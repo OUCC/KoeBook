@@ -1,4 +1,5 @@
-﻿using System.Net.Http.Json;
+﻿using System;
+using System.Net.Http.Json;
 using KoeBook.Core.Contracts.Services;
 
 namespace KoeBook.Core.Services;
@@ -28,8 +29,10 @@ public class StyleBertVitsClientService(IHttpClientFactory httpClientFactory, IA
             var root = _apiRootSelectorService.StyleBertVitsRoot;
             if (string.IsNullOrEmpty(root))
                 throw new EbookException(ExceptionType.UnknownStyleBertVitsRoot);
+            var baseUri = new Uri(root);
+            var requestUri = new Uri(baseUri, path);
             var response = await _httpClientFactory.CreateClient()
-                .GetAsync($"{root}{path}", cancellationToken)
+                .GetAsync(requestUri, cancellationToken)
                 .ConfigureAwait(false) ?? throw new EbookException(exceptionType);
 
             if (!response.IsSuccessStatusCode)
