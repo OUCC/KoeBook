@@ -19,6 +19,7 @@ internal class ClaudeStoryGeneratorService(IClaudeService claudeService) : ILlmS
             {
                 Model = Claudia.Models.Claude3Opus,
                 MaxTokens = 4000,
+                Temperature = 0.4,
                 Messages = [new()
                 {
                     Role = "user",
