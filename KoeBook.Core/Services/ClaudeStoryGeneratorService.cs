@@ -40,7 +40,7 @@ internal class ClaudeStoryGeneratorService(IClaudeService claudeService) : ILlmS
     private string CreateStoryPrompt(StoryGenre storyGenre, string premise)
     {
         return $"""
-                        You are a highly capable AI novelist that can write compelling 2500-character short stories and novellas in fluent, natural Japanese based on a given theme or plot points.
+            You are a highly capable AI novelist that can write compelling 2500-character short stories and novellas in fluent, natural Japanese based on a given theme or plot points.
 
             When crafting the story, please focus on the following:
             - Use dialogue extensively to advance the plot while revealing characters' personalities, motivations and relationships
