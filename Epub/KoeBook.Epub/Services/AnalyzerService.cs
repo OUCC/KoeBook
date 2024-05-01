@@ -13,20 +13,19 @@ public partial class AnalyzerService(
     IScraperSelectorService scrapingService,
     IEpubDocumentStoreService epubDocumentStoreService,
     ILlmAnalyzerService llmAnalyzerService,
-    AiStoryAnalyzerService aiStoryAnalyzerService) : IAnalyzerService
+    AiStoryAnalyzerService aiStoryAnalyzerService,
+    ICreateCoverFileService createCoverFileService) : IAnalyzerService
 {
     private readonly IScraperSelectorService _scrapingService = scrapingService;
     private readonly IEpubDocumentStoreService _epubDocumentStoreService = epubDocumentStoreService;
     private readonly ILlmAnalyzerService _llmAnalyzerService = llmAnalyzerService;
     private readonly AiStoryAnalyzerService _aiStoryAnalyzerService = aiStoryAnalyzerService;
+    private readonly ICreateCoverFileService _createCoverFileService = createCoverFileService;
 
     public async ValueTask<BookScripts> AnalyzeAsync(BookProperties bookProperties, string tempDirectory, CancellationToken cancellationToken)
     {
         Directory.CreateDirectory(tempDirectory);
         var coverFilePath = Path.Combine(tempDirectory, "Cover.png");
-        using var fs = File.Create(coverFilePath);
-        await fs.WriteAsync(CoverFile.ToArray(), cancellationToken);
-        await fs.FlushAsync(cancellationToken);
 
         var rubyReplaced = false;
         EpubDocument document;
@@ -44,6 +43,8 @@ public partial class AnalyzerService(
                 default:
                     throw new UnreachableException($"SourceType: {bookProperties.SourceType}, Source: {bookProperties.Source}");
             }
+
+            _createCoverFileService.Create(document.Title, document.Author, coverFilePath);
         }
         catch (EbookException) { throw; }
         catch (Exception ex)
