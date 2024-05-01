@@ -2,7 +2,7 @@
 
 namespace KoeBook.Core.Contracts.Services;
 
-internal interface ILlmStoryGeneratorService
+public interface ILlmStoryGeneratorService
 {
     ValueTask<string> GenerateStoryAsync(StoryGenre storyGenre, string premise, CancellationToken cancellationToken);
 }
