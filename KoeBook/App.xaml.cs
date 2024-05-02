@@ -4,10 +4,7 @@ using KoeBook.Components.Dialog;
 using KoeBook.Contracts.Services;
 using KoeBook.Core;
 using KoeBook.Core.Contracts.Services;
-using KoeBook.Core.Services;
 using KoeBook.Core.Services.Mocks;
-using KoeBook.Epub.Contracts.Services;
-using KoeBook.Epub.Services;
 using KoeBook.Models;
 using KoeBook.Notifications;
 using KoeBook.Services;
@@ -81,6 +78,7 @@ public partial class App : Application
                 services.AddSingleton<INavigationService, NavigationService>();
                 services.AddSingleton<IDialogService, DialogService>();
                 services.AddSingleton<IDisplayStateChangeService, DisplayStateChangeService>();
+                services.AddSingleton<ICreateCoverFileService, CreateCoverFileService>();
 
                 // Views and ViewModels
                 services.AddTransient<SettingsViewModel>();

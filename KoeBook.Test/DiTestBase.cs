@@ -1,4 +1,5 @@
 ﻿using KoeBook.Core;
+using KoeBook.Core.Contracts.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -17,6 +18,10 @@ public class DiTestBase
     {
         return Microsoft.Extensions.Hosting.Host
             .CreateDefaultBuilder()
-            .UseCoreStartup();
+            .UseCoreStartup()
+            .ConfigureServices(services =>
+            {
+                services.AddSingleton<ICreateCoverFileService, MockCreateCoverFileService>();
+            });
     }
 }
