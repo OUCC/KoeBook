@@ -20,8 +20,8 @@ public class SoundGenerationService(
         var queryCollection = HttpUtility.ParseQueryString(string.Empty);
         queryCollection.Add("text", scriptLine.Text);
         queryCollection.Add("model_id", soundModel.Id);
-        queryCollection.Add("style", scriptLine.Style);
+        queryCollection.Add("style", style);
         return await _styleBertVitsClientService
-            .GetAsByteArrayAsync($"/voice/{queryCollection}", ExceptionType.SoundGenerationFailed, cancellationToken).ConfigureAwait(false);
+            .GetAsByteArrayAsync($"/voice?{queryCollection}", ExceptionType.SoundGenerationFailed, cancellationToken).ConfigureAwait(false);
     }
 }

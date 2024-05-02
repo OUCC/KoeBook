@@ -71,7 +71,7 @@ public partial class ClaudeAnalyzerService(IClaudeService claudeService, IDispla
            .Select(l =>
            {
                var characterId = l[1..l.IndexOf('.')];
-               var voiceTypeSpan = l.AsSpan()[(l.IndexOf(':') + 2)..];
+               var voiceTypeSpan = l.AsSpan()[(l.IndexOf(':') + 2)..].Trim();
                // ボイス割り当てが複数あたったときに先頭のものを使う（例：群衆 AdultMan, AdultWoman)
                var separatorIndex = voiceTypeSpan.IndexOfAny(_searchValues);
                if (separatorIndex > 0)
