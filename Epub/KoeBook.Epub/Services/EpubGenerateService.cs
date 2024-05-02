@@ -18,17 +18,18 @@ public class EpubGenerateService(ISoundGenerationService soundGenerationService,
         cancellationToken.ThrowIfCancellationRequested();
 
         var document = _documentStoreService.Documents.Single(d => d.Id == bookScripts.BookProperties.Id);
-        var tmpMp3Path = Path.Combine(tempDirectory, "temp.mp3");
 
-        foreach (var scriptLine in bookScripts.ScriptLines)
+        for (var i = 0; i < bookScripts.ScriptLines.Length; i++)
         {
+            var scriptLine = bookScripts.ScriptLines[i];
             var wavData = await _soundGenerationService.GenerateLineSoundAsync(scriptLine, bookScripts.Options, cancellationToken).ConfigureAwait(false);
             var ms = new MemoryStream();
             ms.Write(wavData);
             ms.Position = 0;
             using var reader = new WaveFileReader(ms);
+            var tmpMp3Path = Path.Combine(tempDirectory, $"{document.Title}{i}.mp3");
             MediaFoundationEncoder.EncodeToMp3(reader, tmpMp3Path);
-            scriptLine.Audio = new Audio(File.ReadAllBytes(tmpMp3Path));
+            scriptLine.Audio = new Audio(reader.TotalTime, tmpMp3Path);
         }
 
         if (await _createService.TryCreateEpubAsync(document, tempDirectory, cancellationToken).ConfigureAwait(false))
