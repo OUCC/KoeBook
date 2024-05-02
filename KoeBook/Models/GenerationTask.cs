@@ -1,6 +1,8 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using FastEnumUtility;
 using KoeBook.Core.Models;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Media.Imaging;
 
 namespace KoeBook.Models;
 
@@ -39,7 +41,7 @@ public partial class GenerationTask : ObservableObject
 
     public CancellationToken CancellationToken => CancellationTokenSource.Token;
 
-    public string Source => _rawSource is string uri ? uri : "AI生成";
+    public string Source => _rawSource is string uri ? uri : "Claudeによって生成されました。";
 
     private readonly object _rawSource;
 
@@ -49,7 +51,7 @@ public partial class GenerationTask : ObservableObject
     {
         SourceType.Url => "URL",
         SourceType.FilePath => "ファイルパス",
-        SourceType.AiStory => "AI生成",
+        SourceType.AiStory => "生成方法",
         _ => string.Empty,
     };
 
@@ -92,6 +94,12 @@ public partial class GenerationTask : ObservableObject
     public bool SkipEditChangeable => State < GenerationState.Editting;
 
     public bool Editable => State == GenerationState.Editting;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(QrcodeVisibility))]
+    BitmapImage? _qrcode;
+
+    public Visibility QrcodeVisibility => Qrcode is null ? Visibility.Collapsed : Visibility.Visible;
 
     [ObservableProperty]
     private BookScripts? _bookScripts;

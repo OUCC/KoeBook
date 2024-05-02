@@ -1,4 +1,5 @@
-﻿using FastEnumUtility;
+﻿using Amazon.S3;
+using FastEnumUtility;
 using KoeBook.Activation;
 using KoeBook.Components.Dialog;
 using KoeBook.Contracts.Services;
@@ -15,6 +16,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.UI.Xaml;
+using QRCoder;
 using Windows.Win32;
 using Windows.Win32.Foundation;
 using Windows.Win32.UI.WindowsAndMessaging;
@@ -80,6 +82,8 @@ public partial class App : Application
                 services.AddSingleton<IDisplayStateChangeService, DisplayStateChangeService>();
                 services.AddSingleton<ICreateCoverFileService, CreateCoverFileService>();
 
+                services.AddSingleton<QRCodeGenerator>();
+
                 // Views and ViewModels
                 services.AddTransient<SettingsViewModel>();
                 services.AddTransient<SettingsPage>();
@@ -96,6 +100,10 @@ public partial class App : Application
                 // Configuration
                 services.Configure<LocalSettingsOptions>(context.Configuration.GetSection(nameof(LocalSettingsOptions)));
 
+                // AWS
+                services.AddDefaultAWSOptions(context.Configuration.GetAWSOptions());
+                services.AddAWSService<IAmazonS3>();
+
                 // Core Services Mock
                 var mockOptions = context.Configuration.GetSection(nameof(MockOptions)).Get<MockOptions>()!;
                 if (mockOptions.IAnalyzerService.HasValue && mockOptions.IAnalyzerService.Value)
@@ -111,7 +119,7 @@ public partial class App : Application
             })
             .Build();
 
-        App.GetService<IAppNotificationService>().Initialize();
+        GetService<IAppNotificationService>().Initialize();
 
         UnhandledException += App_UnhandledException;
     }

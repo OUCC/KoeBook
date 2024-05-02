@@ -8,7 +8,8 @@ public sealed partial class SharedContentDialog : ContentDialog
     {
         Title = title;
         PrimaryButtonText = primaryText;
-        CloseButtonText = closeText;
+        if (closeText is not null)
+            CloseButtonText = closeText;
         DefaultButton = defaultButton;
         InitializeComponent();
     }

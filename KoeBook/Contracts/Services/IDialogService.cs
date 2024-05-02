@@ -8,7 +8,7 @@ public interface IDialogService
         string title,
         object content,
         string primaryText,
-        string closeText,
+        string? closeText,
         ContentDialogButton defaultButton,
         CancellationToken cancellationToken);
 
@@ -16,7 +16,7 @@ public interface IDialogService
         string title,
         string content,
         string primaryText,
-        string closeText,
+        string? closeText,
         ContentDialogButton defaultButton,
         CancellationToken cancellationToken);
 
