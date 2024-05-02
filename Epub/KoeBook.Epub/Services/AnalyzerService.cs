@@ -45,6 +45,7 @@ public partial class AnalyzerService(
             }
 
             _createCoverFileService.Create(document.Title, document.Author, coverFilePath);
+            document.CoverFilePath = coverFilePath;
         }
         catch (EbookException) { throw; }
         catch (Exception ex)
