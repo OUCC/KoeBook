@@ -28,7 +28,8 @@ public class ClaudeStoryGeneratorService(IClaudeService claudeService) : IStoryC
             },
                 cancellationToken: cancellationToken
             );
-            return storyXml.ToString();
+            var xml = storyXml.ToString();
+            return xml[xml.IndexOf('<')..(xml.LastIndexOf('>') + 1)];
         }
         catch (OperationCanceledException) { throw; }
         catch (Exception e)

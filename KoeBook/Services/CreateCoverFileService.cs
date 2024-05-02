@@ -39,7 +39,7 @@ public class CreateCoverFileService : ICreateCoverFileService
             graphics.DrawString($"著者: {author}", authorFont, brush, new Rectangle(0, 1920, 1600, 640), stringFormat);
 
             // png として出力
-            bitmap.Save(Path.Combine(coverFilePath, "Cover.png"), ImageFormat.Png);
+            bitmap.Save(coverFilePath, ImageFormat.Png);
         }
         catch (Exception ex)
         {
