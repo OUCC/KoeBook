@@ -95,7 +95,7 @@ public class GenerationTaskRunnerService
                 task.Progress = 1;
                 task.MaximumProgress = 1;
 
-                var resultUrl = await _uploadService.UploadFileAsync(resultPath, task.CancellationToken);
+                var resultUrl = await _uploadService.UploadFileAsync(resultPath, task.Title, task.CancellationToken);
                 var qrCodeData = _qrCodeGenerator.CreateQrCode(resultUrl, QRCodeGenerator.ECCLevel.M);
                 var qrCode = new PngByteQRCode(qrCodeData).GetGraphic(20);
                 using (var ims = new InMemoryRandomAccessStream())
@@ -109,7 +109,12 @@ public class GenerationTaskRunnerService
                     await task.Qrcode.SetSourceAsync(ims).AsTask(task.CancellationToken);
                 }
 
-                await _dialogService.ShowAsync("title", new Image()
+                var resultDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "KoeBook");
+                if (!Directory.Exists(resultDirectory))
+                    Directory.CreateDirectory(resultDirectory);
+                File.Move(resultPath, Path.Combine(resultDirectory, $"{task.Title}.epub"), true);
+
+                await _dialogService.ShowAsync($"「{task.Title}」の生成が完了しました", new Image()
                 {
                     Source = task.Qrcode,
                 }, "OK", null, ContentDialogButton.Primary, task.CancellationToken);

@@ -2,5 +2,5 @@
 
 public interface IS3UploadService
 {
-    ValueTask<string> UploadFileAsync(string filePath, CancellationToken cancellationToken);
+    ValueTask<string> UploadFileAsync(string filePath, string title, CancellationToken cancellationToken);
 }
