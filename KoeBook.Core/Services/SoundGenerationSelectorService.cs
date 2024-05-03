@@ -18,7 +18,7 @@ public class SoundGenerationSelectorService(IStyleBertVitsClientService styleBer
                 .GetFromJsonAsync<Dictionary<string, ModelInfo>>("/models/info", ExceptionType.InitializeFailed, cancellationToken)
                 .ConfigureAwait(false);
 
-            Models = models.Select(kvp => new SoundModel(kvp.Key, kvp.Value.FirstSpk, kvp.Value.Styles)).ToArray();
+            Models = models.Select(kvp => new SoundModel(kvp.Key, kvp.Value.FirstSpk.Replace(" ", ""), kvp.Value.Styles)).ToArray();
         }
         catch (EbookException e) when (e.ExceptionType == ExceptionType.UnknownStyleBertVitsRoot) { }
     }

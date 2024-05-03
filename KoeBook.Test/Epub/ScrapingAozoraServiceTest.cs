@@ -28,7 +28,7 @@ public class ScrapingAozoraServiceTest
         using var context = BrowsingContext.New(Configuration.Default);
         using var doc = await context.OpenAsync(req => req.Content(input));
         Assert.NotNull(doc.ParentElement);
-        var epubDocument = new EpubDocument("title", "author", "", default)
+        var epubDocument = new EpubDocument("title", "author", default)
         {
             Chapters = [new() { Sections = [new("section title") { Elements = [new Paragraph() { Text = "test" }] }] }]
         };

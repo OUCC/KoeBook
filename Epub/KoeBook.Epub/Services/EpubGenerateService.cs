@@ -3,6 +3,7 @@ using KoeBook.Core.Contracts.Services;
 using KoeBook.Core.Models;
 using KoeBook.Epub.Contracts.Services;
 using KoeBook.Epub.Models;
+using NAudio.Wave;
 
 namespace KoeBook.Epub.Services;
 
@@ -18,9 +19,16 @@ public class EpubGenerateService(ISoundGenerationService soundGenerationService,
 
         var document = _documentStoreService.Documents.Single(d => d.Id == bookScripts.BookProperties.Id);
 
-        foreach (var scriptLine in bookScripts.ScriptLines)
+        for (var i = 0; i < bookScripts.ScriptLines.Length; i++)
         {
-            scriptLine.Audio = new Audio(await _soundGenerationService.GenerateLineSoundAsync(scriptLine, bookScripts.Options, cancellationToken).ConfigureAwait(false));
+            var scriptLine = bookScripts.ScriptLines[i];
+            var wavData = await _soundGenerationService.GenerateLineSoundAsync(scriptLine, bookScripts.Options, cancellationToken).ConfigureAwait(false);
+            using var ms = new MemoryStream(wavData);
+            using var reader = new WaveFileReader(ms);
+            var tmpMp3Path = Path.Combine(tempDirectory, $"{document.Title}{i}.mp3");
+            MediaFoundationEncoder.EncodeToMp3(reader, tmpMp3Path);
+            using var mp3Stream = new Mp3FileReader(tmpMp3Path);
+            scriptLine.Audio = new Audio(mp3Stream.TotalTime, tmpMp3Path);
         }
 
         if (await _createService.TryCreateEpubAsync(document, tempDirectory, cancellationToken).ConfigureAwait(false))

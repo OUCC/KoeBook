@@ -71,7 +71,7 @@ public partial class ClaudeAnalyzerService(IClaudeService claudeService, IDispla
            .Select(l =>
            {
                var characterId = l[1..l.IndexOf('.')];
-               var voiceTypeSpan = l.AsSpan()[(l.IndexOf(':') + 2)..];
+               var voiceTypeSpan = l.AsSpan()[(l.IndexOf(':') + 2)..].Trim();
                // ボイス割り当てが複数あたったときに先頭のものを使う（例：群衆 AdultMan, AdultWoman)
                var separatorIndex = voiceTypeSpan.IndexOfAny(_searchValues);
                if (separatorIndex > 0)
@@ -174,10 +174,15 @@ public partial class ClaudeAnalyzerService(IClaudeService claudeService, IDispla
                                     var voiceIdLine = zippedLine.First.AsSpan();
                                     voiceIdLine = voiceIdLine[(voiceIdLine.IndexOf(' ') + 2)..];//cまで無視
                                     voiceIdLine = voiceIdLine[..voiceIdLine.IndexOf(' ')];// 二人以上話す時には先頭のものを使う
+                                    if (voiceIdLine[^1] == '.')// idに"."がつくことがあるので削除する
+                                    {
+                                        voiceIdLine = voiceIdLine[..^1];
+                                    }
                                     if (characterId2Name.TryGetValue(voiceIdLine.ToString(), out var characterName))
                                     {
                                         zippedLine.Second.Character = characterName;
                                     }
+                                    else { throw new EbookException(ExceptionType.ClaudeTalkerAndStyleSettingFailed); }
                                     return 0;
                                 }).Count();
         if (voiceIdLinesCount != scriptLines.Length)

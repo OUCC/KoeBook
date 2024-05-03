@@ -1,10 +1,15 @@
-﻿using FastEnumUtility;
+﻿using System.Diagnostics;
+using FastEnumUtility;
 using KoeBook.Contracts.Services;
 using KoeBook.Core;
 using KoeBook.Core.Contracts.Services;
 using KoeBook.Core.Models;
 using KoeBook.Models;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media.Imaging;
+using QRCoder;
 using Windows.Storage;
+using Windows.Storage.Streams;
 
 namespace KoeBook.Services;
 
@@ -13,6 +18,8 @@ public class GenerationTaskRunnerService
     private readonly IGenerationTaskService _taskService;
     private readonly IAnalyzerService _analyzerService;
     private readonly IEpubGenerateService _epubGenService;
+    private readonly IS3UploadService _uploadService;
+    private readonly QRCodeGenerator _qrCodeGenerator;
     private readonly IDialogService _dialogService;
     private readonly string _tempFolder = ApplicationData.Current.TemporaryFolder.Path;
 
@@ -20,12 +27,16 @@ public class GenerationTaskRunnerService
         IGenerationTaskService taskService,
         IAnalyzerService analyzerService,
         IEpubGenerateService epubGenService,
+        IS3UploadService uploadService,
+        QRCodeGenerator qrCodeGenerator,
         IDialogService dialogService)
     {
         _taskService = taskService;
         _taskService.OnTasksChanged += TasksChanged;
         _analyzerService = analyzerService;
         _epubGenService = epubGenService;
+        _uploadService = uploadService;
+        _qrCodeGenerator = qrCodeGenerator;
         _dialogService = dialogService;
     }
 
@@ -83,14 +94,33 @@ public class GenerationTaskRunnerService
                 task.State = GenerationState.Completed;
                 task.Progress = 1;
                 task.MaximumProgress = 1;
-                var fileName = Path.GetFileName(resultPath);
+
+                var resultUrl = await _uploadService.UploadFileAsync(resultPath, task.Title, task.CancellationToken);
+                var qrCodeData = _qrCodeGenerator.CreateQrCode(resultUrl, QRCodeGenerator.ECCLevel.M);
+                var qrCode = new PngByteQRCode(qrCodeData).GetGraphic(20);
+                using (var ims = new InMemoryRandomAccessStream())
+                {
+                    using (var writer = new DataWriter(ims.GetOutputStreamAt(0)))
+                    {
+                        writer.WriteBytes(qrCode);
+                        await writer.StoreAsync().AsTask(task.CancellationToken);
+                    }
+                    task.Qrcode = new BitmapImage();
+                    await task.Qrcode.SetSourceAsync(ims).AsTask(task.CancellationToken);
+                }
+
                 var resultDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "KoeBook");
                 if (!Directory.Exists(resultDirectory))
                     Directory.CreateDirectory(resultDirectory);
-                File.Move(resultPath, Path.Combine(resultDirectory, fileName), true);
+                File.Move(resultPath, Path.Combine(resultDirectory, $"{task.Title}.epub"), true);
+
+                await _dialogService.ShowAsync($"「{task.Title}」の生成が完了しました", new Image()
+                {
+                    Source = task.Qrcode,
+                }, "OK", null, ContentDialogButton.Primary, task.CancellationToken);
             }
             else
-                throw new InvalidOperationException();
+                throw new UnreachableException();
         }
         catch (OperationCanceledException)
         {

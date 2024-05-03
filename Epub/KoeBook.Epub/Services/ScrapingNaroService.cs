@@ -25,7 +25,7 @@ namespace KoeBook.Epub.Services
             return uri.Host == "ncode.syosetu.com";
         }
 
-        public async ValueTask<EpubDocument> ScrapingAsync(string url, string coverFilePath, string imageDirectory, Guid id, CancellationToken ct)
+        public async ValueTask<EpubDocument> ScrapingAsync(string url, string imageDirectory, Guid id, CancellationToken ct)
         {
             var ncode = GetNcode(url);
             var novelInfo = await GetNovelInfoAsync(ncode, ct).ConfigureAwait(false);
@@ -53,7 +53,7 @@ namespace KoeBook.Epub.Services
                 ? bookAuthorTag.InnerHtml
                 : bookAuthorElement.InnerHtml.Replace("作者：", "");
 
-            var document = new EpubDocument(bookTitle, bookAuthor, coverFilePath, id);
+            var document = new EpubDocument(bookTitle, bookAuthor, id);
             if (novelInfo.IsSerial) // 連載の時
             {
                 async IAsyncEnumerable<(string? title, Section section)> LoadDetailsAsync(IBrowsingContext context, NovelInfo novelInfo, string imageDirectory, [EnumeratorCancellation] CancellationToken ct)

@@ -104,6 +104,26 @@
                     </StackPanel>
 
                     <TextBlock
+                        Visibility="{x:Bind ViewModel.Task.QrcodeVisibility, Mode=OneWay}"
+                        Style="{StaticResource SubtitleTextBlockStyle}"
+                        Margin="{StaticResource MediumTopMargin}"
+                        Text="出力結果" />
+                    <StackPanel
+                        Visibility="{x:Bind ViewModel.Task.QrcodeVisibility, Mode=OneWay}"
+                        Background="{ThemeResource CardBackgroundFillColorDefault}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefault}"
+                        BorderThickness="1"
+                        Padding="12"
+                        Width="280"
+                        CornerRadius="12"
+                        HorizontalAlignment="Left"
+                        Margin="{StaticResource SmallTopMargin}">
+                        <Image
+                            MaxWidth="256"
+                            Source="{x:Bind ViewModel.Task.Qrcode, Mode=OneWay}"/>
+                    </StackPanel>
+
+                    <TextBlock
                         Style="{StaticResource SubtitleTextBlockStyle}"
                         Margin="{StaticResource MediumTopMargin}"
                         Text="モデル設定"/>

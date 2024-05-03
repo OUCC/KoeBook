@@ -16,7 +16,7 @@ public class DialogService : IDialogService
         string title,
         object content,
         string primaryText,
-        string closeText,
+        string? closeText,
         ContentDialogButton defaultButton,
         CancellationToken cancellationToken)
     {
@@ -36,7 +36,7 @@ public class DialogService : IDialogService
         string title,
         string content,
         string primaryText,
-        string closeText,
+        string? closeText,
         ContentDialogButton defaultButton,
         CancellationToken cancellationToken)
     {

@@ -74,4 +74,7 @@ public enum ExceptionType
 
     [EnumMember(Value = "表紙の画像の生成に失敗しました")]
     CreateCoverFileFailed,
+
+    [EnumMember(Value = "ファイルのアップロードに失敗しました")]
+    S3UploadFailed,
 }
