@@ -12,5 +12,5 @@ public interface IScraperSelectorService
     /// </summary>
     public bool IsMatchSites(string url);
 
-    public ValueTask<EpubDocument> ScrapingAsync(string url, string coverFillePath, string tempDirectory, Guid id, CancellationToken ct);
+    public ValueTask<EpubDocument> ScrapingAsync(string url, string tempDirectory, Guid id, CancellationToken ct);
 }

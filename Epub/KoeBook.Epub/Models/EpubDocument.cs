@@ -4,7 +4,7 @@ using System.Text;
 
 namespace KoeBook.Epub.Models;
 
-public class EpubDocument(string title, string author, string coverFilePath, Guid id)
+public class EpubDocument(string title, string author, Guid id, string coverFilePath = "")
 {
     public string Title { get; set; } = title;
     public string Author { get; set; } = author;

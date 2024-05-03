@@ -22,7 +22,7 @@ namespace KoeBook.Epub.Services
             return uri.Host == "www.aozora.gr.jp";
         }
 
-        public async ValueTask<EpubDocument> ScrapingAsync(string url, string coverFilePath, string imageDirectory, Guid id, CancellationToken ct)
+        public async ValueTask<EpubDocument> ScrapingAsync(string url, string imageDirectory, Guid id, CancellationToken ct)
         {
             var config = Configuration.Default.WithDefaultLoader();
             using var context = BrowsingContext.New(config);
@@ -37,7 +37,7 @@ namespace KoeBook.Epub.Services
                 ?? throw new EbookException(ExceptionType.WebScrapingFailed, $"著者の取得に失敗しました。\n以下のリンクから正しい小説のリンクを取得してください。\n{GetCardUrl(url)}");
 
             // EpubDocument の生成
-            var document = new EpubDocument(TextReplace(bookTitle.InnerHtml), TextReplace(bookAuther.InnerHtml), coverFilePath, id);
+            var document = new EpubDocument(TextReplace(bookTitle.InnerHtml), TextReplace(bookAuther.InnerHtml), id);
 
             var (contentsIds, hasChapter, hasSection) = LoadToc(doc, document);
 
