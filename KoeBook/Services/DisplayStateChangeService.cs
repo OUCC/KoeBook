@@ -26,7 +26,7 @@ internal class DisplayStateChangeService(IGenerationTaskService taskService) : I
         _ = App.MainWindow.DispatcherQueue.TryEnqueue(DispatcherQueuePriority.High, () =>
         {
             var task = taskService.GetProcessingTask(bookProperties.Id);
-            if(task.State < state)
+            if (task.State < state)
                 task.State = state;
         });
     }
