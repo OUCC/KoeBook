@@ -33,9 +33,7 @@ public class SoundGenerationService(
                     ArrayPool<byte>.Shared.Return(dataBuffer);
                     dataBuffer = ArrayPool<byte>.Shared.Rent(voice.Length);
                 }
-                using var msReader = new MemoryStream();
-                await msReader.WriteAsync(voice, cancellationToken);
-                msReader.Position = 0;
+                using var msReader = new MemoryStream(voice);
                 using var reader = new WaveFileReader(msReader);
                 var read = await reader.ReadAsync(dataBuffer, cancellationToken);
                 if (writer is null)
