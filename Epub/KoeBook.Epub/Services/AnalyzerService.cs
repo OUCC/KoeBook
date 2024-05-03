@@ -34,7 +34,7 @@ public partial class AnalyzerService(
             switch (bookProperties)
             {
                 case { SourceType: SourceType.Url or SourceType.FilePath, Source: string uri }:
-                    document = await _scrapingService.ScrapingAsync(uri, coverFilePath, tempDirectory, bookProperties.Id, cancellationToken);
+                    document = await _scrapingService.ScrapingAsync(uri, tempDirectory, bookProperties.Id, cancellationToken);
                     break;
                 case { SourceType: SourceType.AiStory, Source: AiStory aiStory }:
                     document = _aiStoryAnalyzerService.CreateEpubDocument(aiStory, bookProperties.Id);
@@ -45,6 +45,7 @@ public partial class AnalyzerService(
             }
 
             _createCoverFileService.Create(document.Title, document.Author, coverFilePath);
+            document.CoverFilePath = coverFilePath;
         }
         catch (EbookException) { throw; }
         catch (Exception ex)

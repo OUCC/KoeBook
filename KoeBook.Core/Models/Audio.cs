@@ -1,25 +1,15 @@
-﻿using NAudio.Wave;
+﻿using System.IO;
+using NAudio.Wave;
 
 namespace KoeBook.Epub.Models;
 
-public sealed class Audio
+public sealed class Audio(TimeSpan totalTIme, string tempFilePath)
 {
-    public TimeSpan TotalTime { get; }
-    private readonly byte[] _mp3Data;
+    public TimeSpan TotalTime { get; } = totalTIme;
+    public string TempFilePath { get; } = tempFilePath;
 
-    public Audio(byte[] mp3Data)
+    public FileStream GetStream()
     {
-        _mp3Data = mp3Data;
-        using var ms = new MemoryStream();
-        ms.Write(_mp3Data.AsSpan());
-        ms.Flush();
-        ms.Position = 0;
-        using var reader = new Mp3FileReader(ms);
-        TotalTime = reader.TotalTime;
-    }
-
-    public MemoryStream GetStream()
-    {
-        return new MemoryStream(_mp3Data);
+        return new FileStream(TempFilePath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, true);
     }
 }

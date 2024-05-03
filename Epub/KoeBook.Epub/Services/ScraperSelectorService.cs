@@ -21,14 +21,14 @@ public class ScraperSelectorService(IEnumerable<IScrapingService> scrapingServic
         }
     }
 
-    public async ValueTask<EpubDocument> ScrapingAsync(string url, string coverFillePath, string tempDirectory, Guid id, CancellationToken ct)
+    public async ValueTask<EpubDocument> ScrapingAsync(string url, string tempDirectory, Guid id, CancellationToken ct)
     {
         var uri = new Uri(url);
 
         foreach (var service in _scrapingServices)
         {
             if (service.IsMatchSite(uri))
-                return await service.ScrapingAsync(url, coverFillePath, tempDirectory, id, ct);
+                return await service.ScrapingAsync(url, tempDirectory, id, ct);
         }
 
         throw new ArgumentException("対応するURLではありません");
