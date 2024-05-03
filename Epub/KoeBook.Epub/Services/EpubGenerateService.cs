@@ -27,7 +27,8 @@ public class EpubGenerateService(ISoundGenerationService soundGenerationService,
             using var reader = new WaveFileReader(ms);
             var tmpMp3Path = Path.Combine(tempDirectory, $"{document.Title}{i}.mp3");
             MediaFoundationEncoder.EncodeToMp3(reader, tmpMp3Path);
-            scriptLine.Audio = new Audio(reader.TotalTime, tmpMp3Path);
+            using var mp3Stream = new Mp3FileReader(tmpMp3Path);
+            scriptLine.Audio = new Audio(mp3Stream.TotalTime, tmpMp3Path);
         }
 
         if (await _createService.TryCreateEpubAsync(document, tempDirectory, cancellationToken).ConfigureAwait(false))

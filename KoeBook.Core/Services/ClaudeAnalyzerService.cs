@@ -174,10 +174,15 @@ public partial class ClaudeAnalyzerService(IClaudeService claudeService, IDispla
                                     var voiceIdLine = zippedLine.First.AsSpan();
                                     voiceIdLine = voiceIdLine[(voiceIdLine.IndexOf(' ') + 2)..];//cまで無視
                                     voiceIdLine = voiceIdLine[..voiceIdLine.IndexOf(' ')];// 二人以上話す時には先頭のものを使う
+                                    if (voiceIdLine[^1] == '.')// idに"."がつくことがあるので削除する
+                                    {
+                                        voiceIdLine = voiceIdLine[..^1];
+                                    }
                                     if (characterId2Name.TryGetValue(voiceIdLine.ToString(), out var characterName))
                                     {
                                         zippedLine.Second.Character = characterName;
                                     }
+                                    else { throw new EbookException(ExceptionType.ClaudeTalkerAndStyleSettingFailed); }
                                     return 0;
                                 }).Count();
         if (voiceIdLinesCount != scriptLines.Length)
