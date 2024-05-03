@@ -8,7 +8,7 @@ public class EpubDocumentTest
     [Fact]
     public void EnsureChapter()
     {
-        var document = new EpubDocument("title", "author", "cover", default);
+        var document = new EpubDocument("title", "author", default);
 
         Assert.Empty(document.Chapters);
 
@@ -29,7 +29,7 @@ public class EpubDocumentTest
     [Fact]
     public void EnsureSection()
     {
-        var document = new EpubDocument("title", "author", "cover", default);
+        var document = new EpubDocument("title", "author", default);
 
         Assert.Empty(document.Chapters);
 
@@ -77,7 +77,7 @@ public class EpubDocumentTest
     [Fact]
     public void EnsureParagraph()
     {
-        var document = new EpubDocument("title", "author", "cover", default);
+        var document = new EpubDocument("title", "author", default);
 
         Assert.Empty(document.Chapters);
 
