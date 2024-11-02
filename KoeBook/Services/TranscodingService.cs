@@ -11,12 +11,6 @@ public class TranscodingService : ITranscodingService
 {
     public async ValueTask<(Stream, TimeSpan)> TranscodeAsync(IAsyncEnumerable<byte[]> source, CancellationToken cancellationToken)
     {
-        var codecQuery = new CodecQuery();
-        var codecEP = await codecQuery.FindAllAsync(CodecKind.Audio, CodecCategory.Encoder, CodecSubtypes.AudioFormatPcm);
-        var codecDP = await codecQuery.FindAllAsync(CodecKind.Audio, CodecCategory.Decoder, CodecSubtypes.AudioFormatPcm);
-        var codecE3 = await codecQuery.FindAllAsync(CodecKind.Audio, CodecCategory.Encoder, CodecSubtypes.AudioFormatMP3);
-        var codecD3 = await codecQuery.FindAllAsync(CodecKind.Audio, CodecCategory.Decoder, CodecSubtypes.AudioFormatMP3);
-
         var mediaSource = await CreateAudioSourceAsync(source, cancellationToken);
 
         var transcoder = new MediaTranscoder();
