@@ -18,10 +18,10 @@ public class EpubDocumentStoreService : IEpubDocumentStoreService
                 throw new ArgumentException($"The key {id} is already registered in {nameof(EpubDocumentStoreService)}");
             _documents.Add(document);
         }
-        cancellationToken.Register(() => Unregister(document.Id));
+        cancellationToken.Register(async () => await UnregisterAsync(document.Id));
     }
 
-    public void Unregister(Guid id)
+    public async ValueTask UnregisterAsync(Guid id)
     {
         EpubDocument? document;
         lock (_documents)
@@ -30,6 +30,10 @@ public class EpubDocumentStoreService : IEpubDocumentStoreService
             if (document == null)
                 throw new ArgumentException($"The key {id} is already unregistered in {nameof(EpubDocumentStoreService)}");
             _documents.Remove(document);
+        }
+        if(document != null)
+        {
+            await document.DisposeAsync();
         }
     }
 }

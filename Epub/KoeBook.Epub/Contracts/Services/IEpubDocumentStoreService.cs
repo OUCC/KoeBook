@@ -8,5 +8,5 @@ public interface IEpubDocumentStoreService
 
     void Register(EpubDocument document, CancellationToken cancellationToken);
 
-    void Unregister(Guid id);
+    ValueTask UnregisterAsync(Guid id);
 }

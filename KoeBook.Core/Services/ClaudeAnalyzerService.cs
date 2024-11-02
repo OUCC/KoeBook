@@ -24,34 +24,80 @@ public partial class ClaudeAnalyzerService(IClaudeService claudeService, IDispla
         }
         try
         {
-            var message1 = await _claudeService.Messages.CreateAsync(new()
-            {
-                Model = Claudia.Models.Claude3Opus,
-                MaxTokens = 4000,
-                Messages = [new()
-                {
-                    Role = "user",
-                    Content = CreateCharacterGuessPrompt(lineNumberingText)
-                }]
-            },
-                cancellationToken: cancellationToken
-            );
-            var (characters, characterId2Name) = ExtractCharacterList(message1.ToString(), scriptLines);
+            var message1 =
+                """
+                [CHARACTER LIST]
+                c0. ナレーター: 物語の語り手。落ち着いた口調の男性の声。
+                c1. 佐藤健太: 東京の名門私立大学に入学した主人公。明るく前向きな性格の男子学生。
+                c2. 山田美咲: 健太の高校の後輩で、同じ大学に入学した女性。聡明で優しい性格。健太に好意を抱いている。
+
+                [VOICE ID]
+                1. c0 narration
+                2. c2 dialogue
+                3. c0 narration
+                4. c1 dialogue
+                5. c2 dialogue
+                6. c0 narration
+                7. c1 dialogue
+                8. c2 dialogue
+                9. c1 dialogue
+                10. c2 dialogue
+                11. c0 narration
+                12. c0 narration
+                13. c2 dialogue
+                14. c0 narration
+                15. c1 dialogue
+                16. c2 dialogue
+                17. c0 narration
+                18. c2 dialogue
+                19. c0 narration
+                20. c1 dialogue
+                21. c2 dialogue
+                22. c0 narration
+                23. c1 dialogue
+                24. c0 narration
+
+                [REVISE CHARACTER LIST]
+                c0. ナレーター: 物語の語り手。落ち着いた口調の男性の声。
+                c1. 佐藤健太: 東京の名門私立大学に入学した主人公。明るく前向きな性格の男子学生。
+                c2. 山田美咲: 健太の高校の後輩で、同じ大学に入学した女性。聡明で優しい性格。健太に好意を抱いている。
+
+                [REVISE VOICE ID]
+                1. c0 narration
+                2. c2 dialogue
+                3. c0 narration
+                4. c1 dialogue
+                5. c2 dialogue
+                6. c0 narration
+                7. c1 dialogue
+                8. c2 dialogue
+                9. c1 dialogue
+                10. c2 dialogue
+                11. c0 narration
+                12. c0 narration
+                13. c2 dialogue
+                14. c0 narration
+                15. c1 dialogue
+                16. c2 dialogue
+                17. c0 narration
+                18. c2 dialogue
+                19. c0 narration
+                20. c1 dialogue
+                21. c2 dialogue
+                22. c0 narration
+                23. c1 dialogue
+                24. c0 narration
+                """;
+            var (characters, characterId2Name) = ExtractCharacterList(message1/*.ToString()*/, scriptLines);
             progress.IncrementProgress();
 
-            var message2 = await _claudeService.Messages.CreateAsync(new()
-            {
-                Model = Claudia.Models.Claude3Opus,
-                MaxTokens = 4000,
-                Messages = [new()
-                {
-                    Role = "user",
-                    Content = CreateVoiceTypeAnalyzePrompt(characters)
-                }]
-            },
-                cancellationToken: cancellationToken
-            );
-            var characterVoiceMapping = ExtractCharacterVoiceMapping(message2.ToString(), characterId2Name);
+            var message2 = """
+                [Assign Voices]
+                c0. ナレーター: jvnv-M1-jp
+                c1. 佐藤健太: jvnv-M2-jp
+                c2. 山田美咲: jvnv-F2-jp
+                """;
+            var characterVoiceMapping = ExtractCharacterVoiceMapping(message2/*.ToString()*/, characterId2Name);
             progress.Finish();
 
             return new(bookProperties, new(characterVoiceMapping)) { ScriptLines = [.. scriptLines] };

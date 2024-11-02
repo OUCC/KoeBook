@@ -1,4 +1,5 @@
 ﻿using KoeBook.Core.Models;
+using KoeBook.Epub.Models;
 
 namespace KoeBook.Core.Contracts.Services;
 
@@ -11,5 +12,5 @@ public interface ISoundGenerationService
     /// <param name="bookOptions"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    ValueTask<byte[]> GenerateLineSoundAsync(ScriptLine scriptLine, BookOptions bookOptions, CancellationToken cancellationToken);
+    ValueTask<Audio> GenerateLineSoundAsync(ScriptLine scriptLine, BookOptions bookOptions, CancellationToken cancellationToken);
 }

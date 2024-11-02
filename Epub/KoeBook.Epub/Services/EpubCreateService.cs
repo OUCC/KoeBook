@@ -88,7 +88,7 @@ public class EpubCreateService(IFileExtensionService fileExtensionService) : IEp
                         if (element is Paragraph para && para.Audio != null)
                         {
                             var audioEntry = archive.CreateEntry($"OEBPS/{epubDocument.Chapters[i].Sections[j].Id}_p{k}.mp3");
-                            using var audioStream = para.Audio.GetStream();
+                            await using var audioStream = para.Audio.AudioStream!;
                             using var audioEntryStream = audioEntry.Open();
                             await audioStream.CopyToAsync(audioEntryStream, ct).ConfigureAwait(false);
                             await audioEntryStream.FlushAsync(ct).ConfigureAwait(false);

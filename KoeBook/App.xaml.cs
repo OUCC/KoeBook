@@ -79,6 +79,7 @@ public partial class App : Application
                 services.AddSingleton<IDialogService, DialogService>();
                 services.AddSingleton<IDisplayStateChangeService, DisplayStateChangeService>();
                 services.AddSingleton<ICreateCoverFileService, CreateCoverFileService>();
+                services.AddSingleton<ITranscodingService, TranscodingService>();
 
                 // Views and ViewModels
                 services.AddTransient<SettingsViewModel>();

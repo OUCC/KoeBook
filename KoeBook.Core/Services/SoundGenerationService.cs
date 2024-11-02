@@ -4,57 +4,27 @@ using System.Threading;
 using System.Web;
 using KoeBook.Core.Contracts.Services;
 using KoeBook.Core.Models;
-using NAudio.Wave;
+using KoeBook.Epub.Models;
 
 namespace KoeBook.Core.Services;
 
 public class SoundGenerationService(
     IStyleBertVitsClientService styleBertVitsClientService,
-    ISoundGenerationSelectorService soundGenerationSelectorService) : ISoundGenerationService
+    ISoundGenerationSelectorService soundGenerationSelectorService,
+    ITranscodingService transcodingService) : ISoundGenerationService
 {
     private readonly IStyleBertVitsClientService _styleBertVitsClientService = styleBertVitsClientService;
     private readonly ISoundGenerationSelectorService _soundGenerationSelectorService = soundGenerationSelectorService;
+    private readonly ITranscodingService _transcodingService = transcodingService;
 
-    public async ValueTask<byte[]> GenerateLineSoundAsync(ScriptLine scriptLine, BookOptions bookOptions, CancellationToken cancellationToken)
+    public async ValueTask<Audio> GenerateLineSoundAsync(ScriptLine scriptLine, BookOptions bookOptions, CancellationToken cancellationToken)
     {
         var model = bookOptions.CharacterMapping[scriptLine.Character];
         var soundModel = _soundGenerationSelectorService.Models.FirstOrDefault(m => m.Name == model)
             ?? throw new EbookException(ExceptionType.SoundGenerationFailed);
         var style = soundModel.Styles.Contains(scriptLine.Style) ? scriptLine.Style : soundModel.Styles[0];
-        using var msWriter = new MemoryStream();
-        WaveFileWriter? writer = null;
-        byte[] dataBuffer = ArrayPool<byte>.Shared.Rent(1024);
-        try
-        {
-            await foreach (var voice in GenerateSoundAsync(scriptLine.Text, style, soundModel.Id, cancellationToken))
-            {
-                if (voice.Length > dataBuffer.Length)
-                {
-                    ArrayPool<byte>.Shared.Return(dataBuffer);
-                    dataBuffer = ArrayPool<byte>.Shared.Rent(voice.Length);
-                }
-                using var msReader = new MemoryStream(voice);
-                using var reader = new WaveFileReader(msReader);
-                var read = await reader.ReadAsync(dataBuffer, cancellationToken);
-                if (writer is null)
-                {
-                    writer = new WaveFileWriter(msWriter, reader.WaveFormat);
-                }
-                await writer.WriteAsync(dataBuffer.AsMemory()[..read], cancellationToken);
-            }
-            if (writer is null)
-            {
-                throw new EbookException(ExceptionType.SoundGenerationFailed);
-            }
-            await writer.FlushAsync(cancellationToken);
-            return msWriter.ToArray();
-        }
-        catch { throw; }
-        finally
-        {
-            ArrayPool<byte>.Shared?.Return(dataBuffer);
-            writer?.Dispose();
-        }
+        var (stream, duration) = await _transcodingService.TranscodeAsync(GenerateSoundAsync(scriptLine.Text, style, soundModel.Id, cancellationToken), cancellationToken);
+        return new Audio(duration, stream);
     }
 
     private async IAsyncEnumerable<byte[]> GenerateSoundAsync(string text, string style, string modelId, [EnumeratorCancellation] CancellationToken cancellationToken)

@@ -4,8 +4,9 @@ using System.Text;
 
 namespace KoeBook.Epub.Models;
 
-public class EpubDocument(string title, string author, Guid id, string coverFilePath = "")
+public sealed class EpubDocument(string title, string author, Guid id, string coverFilePath = ""): IAsyncDisposable,IDisposable
 {
+    private bool _disposed;
     public string Title { get; set; } = title;
     public string Author { get; set; } = author;
 
@@ -53,5 +54,18 @@ public class EpubDocument(string title, string author, Guid id, string coverFile
 
         if (Chapters[chapterIndex].Sections[sectionIndex].Elements.Count == 0)
             Chapters[chapterIndex].Sections[sectionIndex].Elements.Add(new Paragraph());
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_disposed) return;
+        var tasks = Chapters.Select(async c => await c.DisposeAsync());
+        await Task.WhenAll(tasks).ConfigureAwait(false);
+        _disposed = true;
+    }
+
+    public void Dispose()
+    {
+        throw new NotImplementedException();
     }
 }
